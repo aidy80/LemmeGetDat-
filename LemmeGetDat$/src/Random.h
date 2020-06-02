@@ -1,14 +1,23 @@
 #pragma once
 
-static unsigned int g_seed;
+#include "Card.h"
 
-inline void fast_srand(unsigned int seed)
-{
-	g_seed = seed;
-}
+constexpr unsigned int a = 214013;
+constexpr unsigned int b = 2531011;
 
-inline unsigned int fast_rand()
+class Random {
+private:
+	unsigned int currRand;
+
+public:
+	Random();
+	Random(unsigned int initSeed);
+
+	unsigned int getRandomNum(int range);
+};
+
+inline unsigned int Random::getRandomNum(int range)
 {
-	g_seed = 214013 * g_seed + 2531011;
-	return g_seed;
+	currRand = a * currRand + b;
+	return (currRand % range);
 }

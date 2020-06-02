@@ -3,51 +3,54 @@
 #include "Card.h"
 #include "Random.h"
 
+#define UNSHUFFLED_DECK   Card::TWD, Card::THD, Card::FOD, Card::FID, Card::SID, Card::SED, Card::EID, \
+						  Card::NID, Card::TED, Card::JAD, Card::QUD, Card::KID, Card::ACD,\
+						  Card::TWH, Card::THH, Card::FOH, Card::FIH, Card::SIH, Card::SEH, Card::EIH, \
+						  Card::NIH, Card::TEH, Card::JAH, Card::QUH, Card::KIH, Card::ACH, \
+						  Card::TWC, Card::THC, Card::FOC, Card::FIC, Card::SIC, Card::SEC, Card::EIC, \
+						  Card::NIC, Card::TEC, Card::JAC, Card::QUC, Card::KIC, Card::ACC, \
+						  Card::TWS, Card::THS, Card::FOS, Card::FIS, Card::SIS, Card::SES, Card::EIS, \
+						  Card::NIS, Card::TES, Card::JAS, Card::QUS, Card::KIS, Card::ACS 
+
+constexpr unsigned char NUM_CARDS_IN_DECK = 52;
+
 class Deck 
 {
 private:
-	Card cards[52];
+	Card cardsLeft[NUM_CARDS_IN_DECK];
 	unsigned char numCardsLeft;
-public:
-	Deck();
-	~Deck();
+	unsigned char numCardsAfterHands;
+	Random generator;
 
 	Card getNextCard();
-	void resetDeck();
+public:
+	Deck();
+	Deck(unsigned int initSeed);
+
+	void resetEntireDeck();
+	void resetPool();
+	Card getNextHandCard();
+	Card getNextPoolCard();
+
+	void printDeck();
 };
 
-inline Card randomCard()
-{
-	static unsigned char numCalls = 0;
-	static unsigned int currRand;
-	if ((numCalls & 0x3) == 0x0) {
-	//if ((numCalls & 0xF) == 0x0) {
-		currRand = fast_rand();
-		//std::cout << "Replace\n";
-	}
-	else {
-		currRand = currRand >> 6;
-		//currRand = currRand >> 1;
-	}
-
-	//std::cout << "currRand: " << currRand << "\n";
-
-	numCalls++;
-	return (Card)(currRand % 52);
+inline Card Deck::getNextPoolCard() {
+	return getNextCard();
 }
 
-inline void createRandomHand(Hand& hand)
-{
-	hand.cards[0] = randomCard();
-	hand.cards[1] = randomCard();
+inline Card Deck::getNextHandCard() {
+	numCardsAfterHands--;
+	return getNextCard();
 }
 
-inline void createRandomPoolCards(Pool& pool)
+inline void Deck::resetEntireDeck() 
 {
-	for (int i = 0; i < NUM_POOL_CARDS; i++)
-	{
-		pool.cards[i] = randomCard();
-	}
+	numCardsLeft = NUM_CARDS_IN_DECK;
+	numCardsAfterHands = 0;
 }
 
-
+inline void Deck::resetPool()
+{
+	numCardsLeft = numCardsAfterHands;
+}

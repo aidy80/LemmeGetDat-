@@ -1,8 +1,7 @@
 #pragma once
 
 #include "pch.h"
-#include "Deck.h"
+#include "Table.h"
+#include "BestHand.h"
 
-char* getBestHands(Pool& pool, Hand* hands, unsigned char numHands = 6);
-
-std::vector<float> calcPreFlopEquity(Hand* hands, unsigned char numHands = 6);
+std::vector<float> calcPreFlopEquity(Hand* hands, unsigned char numHands, Deck& deck);

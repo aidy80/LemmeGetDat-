@@ -140,13 +140,17 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\BestHand.cpp" />
     <ClCompile Include="src\Card.cpp" />
     <ClCompile Include="src\Deck.cpp" />
     <ClCompile Include="src\Main.cpp" />
     <ClCompile Include="src\PokerSim.cpp" />
+    <ClCompile Include="src\Random.cpp" />
     <ClCompile Include="src\UnitTests.cpp" />
+    <ClCompile Include="src\Table.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\BestHand.h" />
     <ClInclude Include="src\Card.h" />
     <ClInclude Include="src\Deck.h" />
     <ClInclude Include="src\Instrumentor.h" />
@@ -154,6 +158,7 @@
     <ClInclude Include="src\PokerSim.h" />
     <ClInclude Include="src\Random.h" />
     <ClInclude Include="src\UnitTests.h" />
+    <ClInclude Include="src\Table.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

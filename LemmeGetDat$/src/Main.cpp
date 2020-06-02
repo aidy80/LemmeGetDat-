@@ -13,7 +13,7 @@ void runUnitTests()
 
 int main()
 {
-	fast_srand((unsigned int)time(NULL));
+	Random random((unsigned int)time(NULL));
 	srand(time(NULL));
 	runUnitTests();
 	return 0;

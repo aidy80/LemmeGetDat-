@@ -1,1 +1,1 @@
-{"otherData": {},"traceEvents":[]}
+{"otherData": {},"traceEvents":[{"cat":"function","dur":1220080,"name":"longLoop","ph":"X","pid":0,"tid":3115223903,"ts":8166348224},{"cat":"function","dur":1154164,"name":"longLoop","ph":"X","pid":0,"tid":3115223903,"ts":8167569596},{"cat":"function","dur":1125237,"name":"longLoop","ph":"X","pid":0,"tid":3115223903,"ts":8168726577}]}
