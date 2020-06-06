@@ -8,7 +8,7 @@ Deck::Deck(unsigned int initSeed) :
 	generator(initSeed), numCardsLeft(NUM_CARDS_IN_DECK), 
 	cardsLeft{UNSHUFFLED_DECK}, numCardsAfterHands(NUM_CARDS_IN_DECK) {}
 
-Card Deck::getNextCard()
+CardEnum Deck::getNextCard()
 {
 	unsigned int randomNum = generator.getRandomNum(numCardsLeft);
 
@@ -16,7 +16,7 @@ Card Deck::getNextCard()
 	assert(numCardsLeft != 0);
 #endif
 
-	Card newCard = cardsLeft[randomNum];
+	CardEnum newCard = cardsLeft[randomNum];
 	cardsLeft[randomNum] = cardsLeft[numCardsLeft - 1];
 	cardsLeft[numCardsLeft - 1] = newCard;
 

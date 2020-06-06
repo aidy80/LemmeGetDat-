@@ -39,12 +39,22 @@ struct Hand
 	Hand(Deck& deck) : folded(false), cards{deck.getNextHandCard(), deck.getNextHandCard()} {}
 
 	Hand(Card* initHand) : folded(false), cards{ initHand[0], initHand[1] } {}
+	Hand(CardEnum* initHand) : folded(false), cards{ { getCardsNumber(initHand[0]), getCardsSuit(initHand[0]) },
+												     { getCardsNumber(initHand[1]), getCardsSuit(initHand[1]) } } {}
 
 	Hand() : folded(false), cards() {}
 
 	void setHand(Card* newHand) {
 		cards[0] = newHand[0];
 		cards[1] = newHand[1];
+	}
+
+	void setHand(CardEnum* newHand) {
+		cards[0].number = getCardsNumber(newHand[0]);
+		cards[1].number = getCardsNumber(newHand[1]);
+
+		cards[0].suit = getCardsSuit(newHand[0]);
+		cards[1].suit = getCardsSuit(newHand[1]);
 	}
 	
 	void setHand(Card newCard1, Card newCard2) {
@@ -78,6 +88,13 @@ struct Pool {
 						  d.getNextPoolCard(), d.getNextPoolCard(), d.getNextPoolCard() } {}
 
 	Pool(Card* initCards) : cards{initCards[0], initCards[1], initCards[2], initCards[3], initCards[4] } {}
+	Pool(CardEnum* initCards) 
+	{
+		for (int i = 0; i < NUM_POOL_CARDS; i++) {
+			cards[i].number = getCardsNumber(initCards[i]);
+			cards[i].suit = getCardsSuit(initCards[i]);
+		}
+	}
 
 	Pool(const Pool& obj) 
 	{
@@ -86,7 +103,15 @@ struct Pool {
 		}
 	}
 
-	Pool() {}
+	Pool& operator=(const Pool& obj) 
+	{
+		for (int i = 0; i < NUM_POOL_CARDS; i++) {
+			cards[i] = obj.cards[i];
+		}
+		return *this;
+	}
+
+	Pool() : cards() {}
 
 	void newPool(Deck& deck) {
 		deck.resetPool();
@@ -95,11 +120,19 @@ struct Pool {
 		}
 	}
 
+	void setCards(CardEnum* newCards) {
+		for (int i = 0; i < NUM_POOL_CARDS; i++) {
+			cards[i].number = getCardsNumber(newCards[i]);
+			cards[i].suit = getCardsSuit(newCards[i]);
+		}
+	}
+
 	void setCards(Card* newCards) {
 		for (int i = 0; i < NUM_POOL_CARDS; i++) {
 			cards[i] = newCards[i];
 		}
 	}
+
 };
 
 struct Player {

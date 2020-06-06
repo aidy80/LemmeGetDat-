@@ -1,10 +1,8 @@
 #pragma once
 #include "pch.h"
 
-
-
 //Representation of all cards in the deck
-enum class Card
+enum class CardEnum
 {
 	TWD, THD, FOD, FID, SID, SED, EID, NID, TED, JAD, QUD, KID, ACD,
 	TWH, THH, FOH, FIH, SIH, SEH, EIH, NIH, TEH, JAH, QUH, KIH, ACH,
@@ -20,9 +18,9 @@ Obtain the number of a passed enum card. A Two will translate to 0, a three to 1
 Params - card: the enum representation of the card
 Return - the card's number
 */
-inline unsigned char getCardsNumber(Card card)
+inline char getCardsNumber(CardEnum card)
 {
-	return (unsigned char)card % 13;
+	return (char)card % 13;
 }
 
 /*
@@ -32,7 +30,7 @@ club to 2, spade to 3
 Params - card: the enum representation of the card
 Return - the card's suit
 */
-inline char getCardsSuit(Card card)
+inline char getCardsSuit(CardEnum card)
 {
 	return (char)card / 13;
 }
@@ -43,6 +41,38 @@ Print a string representation of a given enum card
 Params - card: the enum representation of the card to be decoded
 Return - The representation of the card in string form
 */
+std::string getCardsString(CardEnum card);
+
+
+struct Card 
+{
+	char number;
+	char suit;
+	static const Card NULL_CARD;
+
+	Card(CardEnum card) :
+		number(getCardsNumber(card)), suit(getCardsSuit(card)) {}
+
+	Card(char initNum, char initSuit) :
+		number(initNum), suit(initSuit) {}
+
+	Card() : number(-1), suit(-1) {}
+
+	bool operator!=(Card other) 
+	{
+		return (number != other.number) || (suit != other.suit);
+	}
+};
+
+/* 
+Print a string representation of a given card
+
+Params - card: the card struct representation of the card to be decoded
+Return - The representation of the card in string form
+*/
 std::string getCardsString(Card card);
 
-
+inline CardEnum CardToEnum(Card card) 
+{
+	return (CardEnum)(card.number + card.suit * 13);
+}

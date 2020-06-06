@@ -3,26 +3,26 @@
 #include "Card.h"
 #include "Random.h"
 
-#define UNSHUFFLED_DECK   Card::TWD, Card::THD, Card::FOD, Card::FID, Card::SID, Card::SED, Card::EID, \
-						  Card::NID, Card::TED, Card::JAD, Card::QUD, Card::KID, Card::ACD,\
-						  Card::TWH, Card::THH, Card::FOH, Card::FIH, Card::SIH, Card::SEH, Card::EIH, \
-						  Card::NIH, Card::TEH, Card::JAH, Card::QUH, Card::KIH, Card::ACH, \
-						  Card::TWC, Card::THC, Card::FOC, Card::FIC, Card::SIC, Card::SEC, Card::EIC, \
-						  Card::NIC, Card::TEC, Card::JAC, Card::QUC, Card::KIC, Card::ACC, \
-						  Card::TWS, Card::THS, Card::FOS, Card::FIS, Card::SIS, Card::SES, Card::EIS, \
-						  Card::NIS, Card::TES, Card::JAS, Card::QUS, Card::KIS, Card::ACS 
+#define UNSHUFFLED_DECK   CardEnum::TWD, CardEnum::THD, CardEnum::FOD, CardEnum::FID, CardEnum::SID, CardEnum::SED, CardEnum::EID, \
+						  CardEnum::NID, CardEnum::TED, CardEnum::JAD, CardEnum::QUD, CardEnum::KID, CardEnum::ACD,\
+						  CardEnum::TWH, CardEnum::THH, CardEnum::FOH, CardEnum::FIH, CardEnum::SIH, CardEnum::SEH, CardEnum::EIH, \
+						  CardEnum::NIH, CardEnum::TEH, CardEnum::JAH, CardEnum::QUH, CardEnum::KIH, CardEnum::ACH, \
+						  CardEnum::TWC, CardEnum::THC, CardEnum::FOC, CardEnum::FIC, CardEnum::SIC, CardEnum::SEC, CardEnum::EIC, \
+						  CardEnum::NIC, CardEnum::TEC, CardEnum::JAC, CardEnum::QUC, CardEnum::KIC, CardEnum::ACC, \
+						  CardEnum::TWS, CardEnum::THS, CardEnum::FOS, CardEnum::FIS, CardEnum::SIS, CardEnum::SES, CardEnum::EIS, \
+						  CardEnum::NIS, CardEnum::TES, CardEnum::JAS, CardEnum::QUS, CardEnum::KIS, CardEnum::ACS 
 
 constexpr unsigned char NUM_CARDS_IN_DECK = 52;
 
 class Deck 
 {
 private:
-	Card cardsLeft[NUM_CARDS_IN_DECK];
+	CardEnum cardsLeft[NUM_CARDS_IN_DECK];
 	unsigned char numCardsLeft;
 	unsigned char numCardsAfterHands;
 	Random generator;
 
-	Card getNextCard();
+	CardEnum getNextCard();
 public:
 	Deck();
 	Deck(unsigned int initSeed);
@@ -36,12 +36,16 @@ public:
 };
 
 inline Card Deck::getNextPoolCard() {
-	return getNextCard();
+	CardEnum nextCard = getNextCard();
+	Card newCard(nextCard);
+	return newCard;
 }
 
 inline Card Deck::getNextHandCard() {
 	numCardsAfterHands--;
-	return getNextCard();
+	CardEnum nextCard = getNextCard();
+	Card newCard(nextCard);
+	return newCard;
 }
 
 inline void Deck::resetEntireDeck() 

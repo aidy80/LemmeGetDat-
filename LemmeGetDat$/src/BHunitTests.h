@@ -3,11 +3,12 @@
 #include "pch.h"
 #include "Card.h"
 #include "PokerSim.h"
+#include "TwoDimArray.h"
 
 /* Cards.cpp */
 
-void testCard();
+void testDeck();
 
 /* PokerSim.cpp */
 
-void testPokerSim();
+void runBHUnitTests();

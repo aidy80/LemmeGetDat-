@@ -2,6 +2,7 @@
 
 #include "pch.h"
 #include "Table.h"
+#include "TwoDimArray.h"
 
 struct PokerHand
 {
@@ -31,4 +32,4 @@ enum class HandType
 	HIGH, PAIR, TWOPAIR, TRIPLE, STRAIGHT, FLUSH, HOUSE, QUADS, STRFLUSH
 };
 
-void getBestHands(Pool& pool, Hand* hands, unsigned char numHands, char* bestHands);
+void getBestHands(Pool& pool, Hand* allHands, TwoDimArray& bestHands);
