@@ -4,7 +4,7 @@ static std::mutex numWinLock;
 static std::mutex numTieLock;
 
 constexpr unsigned int NUM_TRIALS = 1712304 * 10; // C(48, 5)
-constexpr unsigned int NUM_THREADS = 16;
+constexpr unsigned int NUM_THREADS = 8;
 constexpr unsigned int NUM_TRIALS_PER_THREAD = NUM_TRIALS / NUM_THREADS;
 
 void checkWinners(TwoDimArray& winners, Hand* hands, int numHands, Pool& pool) {
