@@ -14,10 +14,16 @@ public:
 	Random(unsigned int initSeed);
 
 	unsigned int getRandomNum(int range);
+	void changeSeed(int newSeed);
 };
 
 inline unsigned int Random::getRandomNum(int range)
 {
 	currRand = a * currRand + b;
 	return (currRand % range);
+}
+
+inline void Random::changeSeed(int newSeed) 
+{
+	currRand = newSeed;
 }

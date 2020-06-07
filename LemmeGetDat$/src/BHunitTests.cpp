@@ -734,9 +734,9 @@ void testBestHandAndEquity(const unsigned int numHands, const unsigned int numTr
 	std::cout << numHands << " Player RANDOM HANDS and POOLS, BEST HAND, and EQUITY TESTS" << std::endl;
 
 	Hand* hands = new Hand[numHands];
+	Deck deck;
 	for (unsigned int i = 0; i < numTrials; i++)
 	{
-		Deck deck;
 		for (unsigned int k = 0; k < numHands; k++) {
 			hands[k].setHand(deck.getNextHandCard(), deck.getNextHandCard());
 		}

@@ -25,8 +25,10 @@ private:
 	CardEnum getNextCard();
 public:
 	Deck();
+	//Deck(const Deck&);
 	Deck(unsigned int initSeed);
 
+	void changeSeed(int newSeed);
 	void resetEntireDeck();
 	void resetPool();
 	Card getNextHandCard();
@@ -34,6 +36,11 @@ public:
 
 	void printDeck();
 };
+
+inline void Deck::changeSeed(int newSeed) 
+{
+	generator.changeSeed(newSeed);
+}
 
 inline Card Deck::getNextPoolCard() {
 	CardEnum nextCard = getNextCard();
@@ -51,7 +58,7 @@ inline Card Deck::getNextHandCard() {
 inline void Deck::resetEntireDeck() 
 {
 	numCardsLeft = NUM_CARDS_IN_DECK;
-	numCardsAfterHands = 0;
+	numCardsAfterHands = NUM_CARDS_IN_DECK;
 }
 
 inline void Deck::resetPool()
