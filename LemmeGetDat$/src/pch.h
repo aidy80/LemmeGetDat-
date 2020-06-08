@@ -14,5 +14,6 @@
 #include <thread>
 #include <mutex>
 #include <chrono>
+#include <climits>
 
 #define MULTITHREAD

@@ -158,6 +158,7 @@
     <ClInclude Include="src\BestHand.h" />
     <ClInclude Include="src\Card.h" />
     <ClInclude Include="src\Deck.h" />
+    <ClInclude Include="src\PokerCards.h" />
     <ClInclude Include="src\UnitTests\EquityCalc.h" />
     <ClInclude Include="src\pch.h" />
     <ClInclude Include="src\PokerSim.h" />

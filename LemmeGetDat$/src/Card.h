@@ -1,6 +1,9 @@
 #pragma once
 #include "pch.h"
 
+constexpr int NUM_CARD_NUMBERS = 13;
+constexpr int NUM_SUITS = 4;
+
 /*Representation of all cards in the deck as an enum. Used for cases of random number 
 generation to pick a random card*/
 enum class CardEnum

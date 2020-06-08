@@ -83,5 +83,8 @@
     <ClInclude Include="src\UnitTests\TestBestHand.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\PokerCards.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
