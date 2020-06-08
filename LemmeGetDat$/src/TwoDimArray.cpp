@@ -25,6 +25,7 @@ TwoDimArray::TwoDimArray(char initNumRows, char initNumCols)
 #endif
 	allocArray();
 	resetArray();
+	numRows = initNumRows;
 }
 
 TwoDimArray::TwoDimArray() : elems(nullptr), uniqueElems(nullptr), arraySizes(nullptr), numUnique(0), currUniqueIndex(-1), numRows(1), numCols(6)
@@ -34,6 +35,7 @@ TwoDimArray::TwoDimArray() : elems(nullptr), uniqueElems(nullptr), arraySizes(nu
 #endif
 	allocArray();
 	resetArray();
+	numRows = 1;
 }
 
 void TwoDimArray::replaceArray(const TwoDimArray& other) 
@@ -107,5 +109,6 @@ void TwoDimArray::resetArray()
 		uniqueElems[i] = -1;
 	}
 
+	numRows = 0;
 	numUnique = 0;
 }

@@ -54,4 +54,4 @@ Return - The best hand(s) will be outputted in the bestHands 2Darray (the input 
 				1 4 -1 -1 -1 -1
 				3 -1 -1 -1 -1 -1
 						*/
-void getBestHands(Pool& pool, Hand* allHands, TwoDimArray& bestHands);
+void getBestHands(Pool& pool, const Hand* allHands, TwoDimArray& bestHands);

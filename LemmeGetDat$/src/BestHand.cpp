@@ -311,9 +311,13 @@ void testPoolStraight(const Pool& pool, const unsigned char startCardIndex, cons
 
 /*Take an original pool of cards and create an applied pool which, if there is a flushSuit!=-1, 
 does not include pool non flushSuit cards. If flushSuit==-1, duplicate numbers are not included in applied pool.
+
+The number of cards in the applied pool is returned
+
 See check straight for parameter info*/
-inline void fillAppliedPool(const Pool& originalPool, Pool& appliedPool, int& numPoolCards, char flushSuit) 
+inline int fillAppliedPool(const Pool& originalPool, Pool& appliedPool, char flushSuit) 
 {
+	int numPoolCards = 0;
 	if (flushSuit != -1) {
 		for (int i = 0; i < NUM_POOL_CARDS; i++) {
 			if (originalPool.cards[i].suit == flushSuit) {
@@ -332,6 +336,8 @@ inline void fillAppliedPool(const Pool& originalPool, Pool& appliedPool, int& nu
 			}
 		}
 	}
+
+	return numPoolCards;
 }
 
 /*
@@ -347,11 +353,10 @@ Params: pool - the pool cards. They must come sorted in order from smallest numb
 */
 void checkStraight(const Pool& originalPool, const Hand* hands, TwoDimArray& bestHands, PokerHand* pokerhands, const char flushSuit = -1)
 {
-	int numPoolCards = 0;
 	Pool appliedPool; //Change to card array?
-	fillAppliedPool(originalPool, appliedPool, numPoolCards, flushSuit);
+	int numPoolCards = fillAppliedPool(originalPool, appliedPool, flushSuit);
 
-	unsigned char* poolSpacing = (unsigned char*)alloca(sizeof(unsigned char) * (numPoolCards - 1));
+	int* poolSpacing = (int*)_malloca(sizeof(int) * (numPoolCards - 1));
 	for (int i = 0; i < numPoolCards - 1; i++) 
 	{
 		poolSpacing[i] = appliedPool.cards[i + 1].number - appliedPool.cards[i].number - 1;
@@ -368,11 +373,12 @@ void checkStraight(const Pool& originalPool, const Hand* hands, TwoDimArray& bes
 			}
 		}
 	}
+	_freea(poolSpacing);
 }
 
-void checkHighPairTripQuad(Pool& pool, Hand* hands, TwoDimArray& bestHands, PokerHand* pokerhands)
+/*Fill the number histogram to reflect what numbers are given by the pool and how many*/
+inline void fillNumHistPool(int* numHist, const Pool& pool) 
 {
-	unsigned char* numHist = (unsigned char*)alloca(sizeof(unsigned char) * NUM_CARD_NUMBERS);
 	for (int i = 0; i < NUM_CARD_NUMBERS; i++) {
 		numHist[i] = 0;
 	}
@@ -380,132 +386,177 @@ void checkHighPairTripQuad(Pool& pool, Hand* hands, TwoDimArray& bestHands, Poke
 	for (int i = 0; i < NUM_POOL_CARDS; i++) {
 		numHist[pool.cards[i].number]++;
 	}
+}
+
+/*Go through all the entire histogram and fill in pokerhands to reflect when a quad, triple, or pair is seen. Additionally, adjust and tempKicker1, tempKicker2
+to contain the likely kickers depending on whether a quad, triple, and/or pair is seen. Additionally, unusedCombo is used to store the case where there is 
+an unsed pair or triple (as is the case with a quad+triple) or any unused pair (as is the case with three pairs)
+
+See checkHighPairTripQuad for more parameter info*/
+inline void processNumHist(int* numHist, const Hand& currHand, const int currPlayer, PokerHand* pokerhands, char& tempKicker1, char& tempKicker2, char& unusedCombo)
+{
+	const unsigned char firstNum = currHand.cards[0].number;
+	const unsigned char secNum = currHand.cards[1].number;
+
+	for (int i = 0; i < NUM_CARD_NUMBERS; i++) {
+		if (numHist[i] == 2)
+		{
+			if (!isQuads(pokerhands, currPlayer))
+			{
+				if (pokerhands[currPlayer].pair[1] > -1)
+				{
+					if (firstNum == pokerhands[0].pair[0] &&
+						secNum == pokerhands[currPlayer].pair[1]) {
+						tempKicker1 = pokerhands[currPlayer].pair[1];
+					}
+					else {
+						unusedCombo = pokerhands[currPlayer].pair[1];
+					}
+				}
+				pokerhands[currPlayer].pair[1] = pokerhands[currPlayer].pair[0];
+				pokerhands[currPlayer].pair[0] = i;
+			}
+			else if (isHandCard(firstNum, secNum, i)) {
+				tempKicker1 = i;
+			}
+			else {
+				unusedCombo = i;
+			}
+		}
+		else if (numHist[i] == 3)
+		{
+			if (isQuads(pokerhands, currPlayer) && isHandCard(firstNum, secNum, i))
+			{
+				tempKicker1 = i;
+			}
+			else {
+				if (pokerhands[currPlayer].triple != -1) {
+					pokerhands[currPlayer].pair[0] = pokerhands[currPlayer].triple;
+				}
+				pokerhands[currPlayer].triple = i;
+			}
+		}
+		else if (numHist[i] == 4)
+		{
+			if (pokerhands[currPlayer].triple != -1 && isHandCard(firstNum, secNum, pokerhands[currPlayer].triple)) {
+				tempKicker1 = pokerhands[currPlayer].triple;
+			}
+			else if (pokerhands[currPlayer].pair[0] != -1) {
+				if (isHandCard(firstNum, secNum, pokerhands[currPlayer].pair[0])) {
+					tempKicker1 = pokerhands[currPlayer].pair[0];
+				}
+				else {
+					unusedCombo = pokerhands[currPlayer].pair[0];
+				}
+			}
+			pokerhands[currPlayer].pair[0] = i;
+			pokerhands[currPlayer].pair[1] = i;
+		}
+	}
+}
+
+/*
+Given a filled histogram and pokerhands made to reflect the existence of pairs, triples, and quads, fill in the players kickers if they are valid. 
+That is, only give a player a kicker if it is used as a single card and comes from their hands and the size of the pokerhand 
+remains at a max of 5 cards. So, the player has three jacks, two on board and one in their hand, and they have a nine in hand, that nine will 
+only be considered as a kicker if there are not two higher cards on board (i.e. if there is a king and an ace on board, the nine will not be a kicker)
+*/
+inline void fillHistKickers(int* numHist, const Hand& currHand, const int currPlayer, PokerHand* pokerhands, char tempKicker1, char tempKicker2, char unusedCombo) {
+	if (isQuads(pokerhands, currPlayer) || (!(pokerhands[currPlayer].flush || pokerhands[currPlayer].straight))) {
+		int i;
+		int numUsed = 0;
+
+		if (isQuads(pokerhands, currPlayer)) {
+			numUsed = 4;
+		}
+		else if (pokerhands[currPlayer].triple > -1) {
+			numUsed = 3;
+		}
+		else if (pokerhands[currPlayer].pair[1] > -1) {
+			numUsed = 4;
+		}
+		else if (pokerhands[currPlayer].pair[0] > -1) {
+			numUsed = 2;
+		}
+
+		for (i = NUM_CARD_NUMBERS - 1; numUsed < 5 && i > -1; i--)
+		{
+			if (numHist[i] == 1) {
+				if (isHandCard(currHand.cards[0].number, currHand.cards[1].number, i)) {
+					if (i > tempKicker1) {
+						tempKicker2 = tempKicker1;
+						tempKicker1 = i;
+					}
+					else if (i > tempKicker2) {
+						tempKicker2 = i;
+					}
+				}
+				numUsed++;
+			}
+			else if (i == unusedCombo) {
+				numUsed++;
+			}
+		}
+
+		if (++i > tempKicker1) {
+			tempKicker1 = -1;
+			tempKicker2 = -1;
+		}
+
+		if (isQuads(pokerhands, currPlayer)) {
+			tempKicker2 = -1;
+		}
+		else if (pokerhands[currPlayer].triple != -1 && pokerhands[currPlayer].pair[0] != -1) {
+			tempKicker1 = pokerhands[currPlayer].triple;
+			tempKicker2 = pokerhands[currPlayer].pair[0];
+		}
+		else if (pokerhands[currPlayer].pair[1] > -1) {
+			tempKicker2 = -1;
+		}
+
+		pokerhands[currPlayer].kicker1 = tempKicker1;
+		pokerhands[currPlayer].kicker2 = tempKicker2;
+	}
+}
+
+
+
+/*
+Check which have the best quad, house, three of a kind, two pairs, pair, or, 
+if nothing else, high card. This is supposed to be called after checking for 
+straights and flushes and will only change the player's kicker value if a given 
+player has quads or a full house and/or if the player has neither a flush or straight.
+Further, if the player has a three of a kind but no full house or quads, the kickers
+will represent the player's three of a kind hand. If the player only has a two pair, 
+the kicker will represent the two pair, etc for pair and high card.
+
+Params: pool - the boards pool cards
+		hands - the hands of all players on the table
+		bestHands - a two dimensional array with information about which players have not yet folded
+		pokerhands - an array of Pokerhand structs which hold information about the best pokerhands
+					 that (unfolded) players have. This will be updated with the quads, triple, pair, 
+					 and high card info
+*/
+void checkHighPairTripQuad(const Pool& pool, const Hand* hands, TwoDimArray& bestHands, PokerHand* pokerhands)
+{
+	int* numHist = (int*)_malloca(sizeof(int) * NUM_CARD_NUMBERS);
+	fillNumHistPool(numHist, pool);
 
 	int currPlayer;
 	while ((currPlayer = bestHands.getNextUnique()) != -1) {
-		unsigned char firstNum = hands[currPlayer].cards[0].number;
-		unsigned char secNum = hands[currPlayer].cards[1].number;
-		numHist[firstNum]++;
-		numHist[secNum]++;
 		char tempKicker1 = -1;
 		char tempKicker2 = -1;
 		char unusedCombo = -1;
+		numHist[hands[currPlayer].cards[0].number]++;
+		numHist[hands[currPlayer].cards[1].number]++;
 
-		for (int i = 0; i < NUM_CARD_NUMBERS; i++) {
-			if (numHist[i] == 2)
-			{
-				if (!isQuads(pokerhands, currPlayer))
-				{
-					if (pokerhands[currPlayer].pair[1] > -1)
-					{
-						if (firstNum == pokerhands[0].pair[0] && 
-							secNum == pokerhands[currPlayer].pair[1]) {
-							tempKicker1 = pokerhands[currPlayer].pair[1];
-						}
-						else {
-							unusedCombo = pokerhands[currPlayer].pair[1];
-						}
-					}
-					pokerhands[currPlayer].pair[1] = pokerhands[currPlayer].pair[0];
-					pokerhands[currPlayer].pair[0] = i;
-				}
-				else if (isHandCard(firstNum, secNum, i)) {
-					tempKicker1 = i;
-				}
-				else {
-					unusedCombo = i;
-				}
-			}
-			else if (numHist[i] == 3) 
-			{
-				if (isQuads(pokerhands, currPlayer) && isHandCard(firstNum, secNum, i))
-				{
-					tempKicker1 = i;
-				}
-				else {
-					if (pokerhands[currPlayer].triple != -1) {
-						pokerhands[currPlayer].pair[0] = pokerhands[currPlayer].triple;
-					}
-					pokerhands[currPlayer].triple = i;
-				}
-			}
-			else if (numHist[i] == 4) 
-			{
-				if (pokerhands[currPlayer].triple != -1 && isHandCard(firstNum, secNum, pokerhands[currPlayer].triple)) {
-					tempKicker1 = pokerhands[currPlayer].triple;
-				}
-				else if (pokerhands[currPlayer].pair[0] != -1){
-					if (isHandCard(firstNum, secNum, pokerhands[currPlayer].pair[0])) {
-						tempKicker1 = pokerhands[currPlayer].pair[0];
-					}
-					else {
-						unusedCombo = pokerhands[currPlayer].pair[0];
-					}
-				}
-				pokerhands[currPlayer].pair[0] = i;
-				pokerhands[currPlayer].pair[1] = i;
-			}
-		}
+		processNumHist(numHist, hands[currPlayer], currPlayer, pokerhands, tempKicker1, tempKicker2, unusedCombo);
+		fillHistKickers(numHist, hands[currPlayer], currPlayer, pokerhands, tempKicker1, tempKicker2, unusedCombo);
 
-		if (isQuads(pokerhands, currPlayer) || (!(pokerhands[currPlayer].flush || pokerhands[currPlayer].straight))) {
-			int i;
-			int numUsed = 0;
-			
-			if (isQuads(pokerhands, currPlayer)) {
-				numUsed = 4;
-			}
-			else if (pokerhands[currPlayer].triple > -1) {
-				numUsed = 3;
-			}
-			else if (pokerhands[currPlayer].pair[1] > -1) {
-				numUsed = 4;
-			}
-			else if (pokerhands[currPlayer].pair[0] > -1) {
-				numUsed = 2;
-			}
-
-			for (i = NUM_CARD_NUMBERS - 1; numUsed < 5 && i > -1; i--)
-			{
-				if (numHist[i] == 1) {
-					if (isHandCard(firstNum, secNum, i)) {
-						if (i > tempKicker1) {
-							tempKicker2 = tempKicker1;
-							tempKicker1 = i;
-						}
-						else if (i > tempKicker2) {
-							tempKicker2 = i;
-						}
-					}
-					numUsed++;
-				}
-				else if (i == unusedCombo) {
-					numUsed++;
-				}
-			}
-
-			if (++i > tempKicker1) {
-				tempKicker1 = -1;
-				tempKicker2 = -1;
-			}
-
-			if (isQuads(pokerhands, currPlayer)) {
-				tempKicker2 = -1;
-			}
-			else if (pokerhands[currPlayer].triple != -1 && pokerhands[currPlayer].pair[0] != -1) {
-				tempKicker1 = pokerhands[currPlayer].triple;
-				tempKicker2 = pokerhands[currPlayer].pair[0];
-			}
-			else if (pokerhands[currPlayer].pair[1] > -1) {
-				tempKicker2 = -1;
-			}
-
-			pokerhands[currPlayer].kicker1 = tempKicker1;
-			pokerhands[currPlayer].kicker2 = tempKicker2;
-		}
-
-		numHist[secNum]--;
-		numHist[firstNum]--;
+		numHist[hands[currPlayer].cards[0].number]--;
+		numHist[hands[currPlayer].cards[1].number]--;
 	}
+	_freea(numHist);
 }
 
 template <typename T> 
@@ -515,6 +566,7 @@ void swapElems(T& elem1, T& elem2) {
 	elem2 = temp;
 }
 
+/*Standard templated insert sort*/
 template <typename T>
 void insertSort(T* elems, int numElems, std::function<bool(T&, T&)> comparator)
 {	
@@ -523,10 +575,7 @@ void insertSort(T* elems, int numElems, std::function<bool(T&, T&)> comparator)
 #endif
 	for (int i = 1; i < numElems; i++) {
 		for (int j = i - 1; j > -1; j--) {
-			bool comp = comparator(elems[j + 1], elems[j]);
-			//std::cout << "Elem 1: " << elems[j] << "Elem 2: " << elems[j + 1] <<
-			//			 ". Comparator: " << comp;
-			if (comp) {
+			if(comparator(elems[j + 1], elems[j])) {
 				swapElems<T>(elems[j + 1], elems[j]);
 			}
 			else {
@@ -536,20 +585,27 @@ void insertSort(T* elems, int numElems, std::function<bool(T&, T&)> comparator)
 	}
 }
 
+/*player - Contains a given hand's player, 
+winType - whether it has the best type of hand (i.e. it is true if the hand had three Jacks if three jacks is the best poker hand out of the players int the pot),
+winWithKicker - whether it has the best type of hand (same as winType) AND it has the best kicker(s) if applicable*/
 struct WinningHand {
 	unsigned char player;
 	bool winType;
 	bool winWithKicker;
 };
 
-void fillBestHands(TwoDimArray& bestHands, int potNum, int winningHands, HandType winHandType, PokerHand* pokerhands) 
-{
-	WinningHand* handsWithIndex = (WinningHand*)alloca(sizeof(WinningHand) * bestHands.getRowSize(potNum));
-	char highestHand[2] = { -1, -1 };
+/*Go through all of the hands in the current pot and, given the best hand type (winHandType), find out which is the highest form of that hand. 
+So, if the HandType is QUADS, and one player has 4 twos while another has 4 jacks, the highest hands will be set to {9, 0} where 9 denotes a jack. 
+in the case of a two pair, the highest two pair will be picked. So if one player has Aces and Kings while the other has Aces and Threes, highest
+hands will be {12, 11}
+
+See fillBestHand for more param info
+*/
+inline void getHighestHand(char* highestHand, const int potNum, TwoDimArray& bestHands, PokerHand* pokerhands, 
+						   const int winningHands, const HandType winHandType) {
 	for (int i = 0; i < bestHands.getRowSize(potNum); i++)
 	{
 		int currPlayer = bestHands.get(potNum, i);
-		handsWithIndex[i].player = currPlayer;
 
 		if (isWinning(winningHands, currPlayer)) {
 			switch (winHandType) {
@@ -580,9 +636,20 @@ void fillBestHands(TwoDimArray& bestHands, int potNum, int winningHands, HandTyp
 			}
 		}
 	}
+}
 
+/*
+Given the best type of pokerhand and the highest hand in that subtype, determine which players(s) have that winning hand type 
+and record whether or not they do into the WinningHand array. 
+
+See fillBestHand for more specific param information
+*/
+inline void fillWinType(WinningHand* handsWithIndex, char* highestHand, const int potNum, 
+						TwoDimArray& bestHands, PokerHand* pokerhands, const int winningHands, const HandType winHandType) {
 	for (int i = 0; i < bestHands.getRowSize(potNum); i++) {
 		int currPlayer = bestHands.get(potNum, i);
+		handsWithIndex[i].player = currPlayer;
+
 		if (isWinning(winningHands, currPlayer)) {
 			switch (winHandType) {
 			case HandType::PAIR:
@@ -608,65 +675,117 @@ void fillBestHands(TwoDimArray& bestHands, int potNum, int winningHands, HandTyp
 
 		handsWithIndex[i].winWithKicker = handsWithIndex[i].winType;
 	}
+}
 
-	insertSort<WinningHand>(handsWithIndex, bestHands.getRowSize(potNum),
-		[pokerhands](WinningHand& val1, WinningHand& val2) -> bool
-		{
-			if (val1.winType == 1 && val2.winType == 1) {
-				if (pokerhands[val1.player].kicker1 > pokerhands[val2.player].kicker1) 
-				{
+/*Return a lambda function that compares Winning hands such that only hands with the highest kicker 
+and highest winning hand will be earlier in the order, and have winWithKicker==true*/
+auto getWinHandCompare(const PokerHand* pokerhands) {
+	return [pokerhands](WinningHand& val1, WinningHand& val2) -> bool
+	{
+		if (val1.winType == 1 && val2.winType == 1) {
+			if (pokerhands[val1.player].kicker1 > pokerhands[val2.player].kicker1)
+			{
+				val2.winWithKicker = false;
+				return true;
+			}
+			else if (pokerhands[val1.player].kicker1 < pokerhands[val2.player].kicker1) {
+				val1.winWithKicker = false;
+				return false;
+			}
+			else {
+				if (pokerhands[val1.player].kicker2 > pokerhands[val2.player].kicker2) {
 					val2.winWithKicker = false;
 					return true;
 				}
-				else if (pokerhands[val1.player].kicker1 < pokerhands[val2.player].kicker1) {
+				else if (pokerhands[val1.player].kicker2 < pokerhands[val2.player].kicker2) {
 					val1.winWithKicker = false;
 					return false;
 				}
 				else {
-					if (pokerhands[val1.player].kicker2 > pokerhands[val2.player].kicker2) {
+					if (!val1.winWithKicker) {
 						val2.winWithKicker = false;
-						return true;
-					} else if (pokerhands[val1.player].kicker2 < pokerhands[val2.player].kicker2) {
+					}
+					else if (!val2.winWithKicker) {
 						val1.winWithKicker = false;
-						return false;
 					}
-					else {
-						if (!val1.winWithKicker) {
-							val2.winWithKicker = false;
-						}
-						else if (!val2.winWithKicker) {
-							val1.winWithKicker = false;
-						}
-						return val1.player < val2.player;
-					}
+					return val1.player < val2.player;
 				}
-			} else if (val1.winType == 1) {
-				return true;
-			} else if (val2.winType == 1) {
-				return false;
-			} 
-			return val1.player < val2.player;
-		});
+			}
+		}
+		else if (val1.winType == 1) {
+			return true;
+		}
+		else if (val2.winType == 1) {
+			return false;
+		}
+		return val1.player < val2.player;
+	};
+}
+
+/*Fill the bestHands array to reflect the winning hands in the given potNum. So, if players 1, 2, and 3 are in the pot and 
+players 1 and 2 tied but both beat player 3, we would see the corresponding row in the bestHands array be set to 
+ 1, 2, -1, -1, -1, -1
+ 
+ Params: bestHands - the two dimensional array denoting the various pots in the game, 
+					 with each row containing the players in each pot. See getBestHand for more detail
+		 potNum - the number of the pot being filled
+		 winningHands - a bitmap showing which players in the pot have the "winHandType" of hand. That is
+						if winHandType = TRIPLE, all 1s in the winningHands bit map represent players with triples.
+						So, it winningHands = 00001001, players 0 and 3 have the winning hand types
+		 winHandType - the winning type of hand
+		 pokerhands - an array containing information about the pokerhands for the various players in the pot. 
+					  Specifically, info about a given player has quads, triples, two pairs, flushes, ..., etc 
+					  along with their best kicker(s).
+*/
+void fillBestHands(TwoDimArray& bestHands, const int potNum, const int winningHands, const HandType winHandType, PokerHand* pokerhands) 
+{
+	WinningHand* handsWithIndex = (WinningHand*)_malloca(sizeof(WinningHand) * bestHands.getRowSize(potNum));
+	char highestHand[2] = { -1, -1 };
+	
+	getHighestHand(highestHand, potNum, bestHands, pokerhands, winningHands, winHandType);
+	fillWinType(handsWithIndex, highestHand, potNum, bestHands, pokerhands, winningHands, winHandType);
+
+	/*Sort the winning hands such that only the hands with the 
+	highest winning hand and highest kicker have "winWithKicker == true"*/
+	insertSort<WinningHand>(handsWithIndex, bestHands.getRowSize(potNum), getWinHandCompare(pokerhands));
 	
 	for (int i = 0; i < bestHands.getRowSize(potNum); i++)
 	{
 		bestHands.set(potNum, i, handsWithIndex[i].winWithKicker ? handsWithIndex[i].player : -1);
 	}
+
+	_freea(handsWithIndex);
 }
 
+/*Sort the pool such that lower numbered cards are earlier in the pool (i.e. twos come before jacks) */
 inline void sortPool(Pool& pool) 
 {
-	//std::sort(pool.cards, pool.cards + NUM_POOL_CARDS,
 	insertSort<Card>(pool.cards, NUM_POOL_CARDS,
 		[](Card card1, Card card2) {
 			return card1.number < card2.number;
 		   });
 }
 
-//TODO:: allow the user to pass in only a range of hands to consider. Add an array of player indices to be considered
-void getBestHands(Pool& pool, Hand* allHands, TwoDimArray& bestHands)
+/*Function which takes in the hands of all players, the (full 5-card) pool on board, and returns the player(s) 
+with the best pokerhands. It requires bestHands as both an input (showing the players in each pot) and 
+uses it as an output (showing which player(s) win the pot(s)).
+
+Params: pool - The pool cards on board
+		allHands - all the players hands at the tables
+		bestHands - a 2D array outlining the various pots in the game. As an input, it will have a 
+					row for each pot on table. In it, will be the players immediately adjecent to 
+					each other. So, if players 1 2 3 are in one pot and players 1 2 3 4 are in another, 
+					out bestHands input should be
+					| 1 2 3 -1 -1 -1 |
+					| 1 2 3  4 -1 -1 |
+					Then, if players 1 and 2 tie the first pot and player 4 wins the second pot, 
+					the outputted bestHands arrays will be
+					| 1  2 -1 -1 -1 -1|
+					| 4 -1 -1 -1 -1 -1|
+*/
+void getBestHands(Pool& pool, const Hand* allHands, TwoDimArray& bestHands)
 {
-	PokerHand* pokerhands = (PokerHand*)alloca(sizeof(PokerHand) * bestHands.getNumCols());
+	PokerHand* pokerhands = (PokerHand*)_malloca(sizeof(PokerHand) * bestHands.getNumCols());
 	int currPlayer;
 	while ((currPlayer = bestHands.getNextUnique()) != -1) 
 	{
@@ -717,4 +836,5 @@ void getBestHands(Pool& pool, Hand* allHands, TwoDimArray& bestHands)
 		CHECK_BEST_HAND(pairHands, HandType::PAIR)
 		CHECK_BEST_HAND(0x3F, HandType::HIGH)
 	}
+	_freea(pokerhands);
 }

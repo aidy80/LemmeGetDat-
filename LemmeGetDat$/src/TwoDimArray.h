@@ -118,6 +118,7 @@ inline void TwoDimArray::set(int i, int j, char newVal)
 	assert(newVal < numCols);
 	assert(currUniqueIndex == -1);
 	assert(j < arraySizes[i] + 1);
+	assert(i < numRows + 1)
 	assert(newVal < numCols);
 #endif
 	if (newVal > -1) {
@@ -126,6 +127,12 @@ inline void TwoDimArray::set(int i, int j, char newVal)
 			numUnique++;
 		}
 	}
+
+	if (i == numRows + 1 && arraySizes[i] == 0)   
+	{
+		numRows++;
+	}
+
 	if (arraySizes[i] == j) {
 		arraySizes[i]++;
 	}
