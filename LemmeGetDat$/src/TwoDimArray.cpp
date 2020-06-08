@@ -10,37 +10,48 @@ inline char ARRAY_SIZE(char numCols)
 	return TOTAL_NUM_ROWS(numCols) * numCols;
 }
 
+void TwoDimArray::allocArray()
+{
+	uniqueElems = new char[numCols];
+	elems = new char[ARRAY_SIZE(numCols)];
+	arraySizes = new char[TOTAL_NUM_ROWS(numCols)];
+}
+
 TwoDimArray::TwoDimArray(char initNumRows, char initNumCols) 
 	: elems(nullptr), uniqueElems(nullptr), numUnique(0), currUniqueIndex(-1), numRows(initNumRows), numCols(initNumCols)
 {
 #ifdef _DEBUG
 	assert(numRows < numCols);
 #endif
-	uniqueElems = new char[numCols];
-	for (int i = 0; i < numCols; i++) {
-		uniqueElems[i] = -1;
-	}
-
-	elems = new char[ARRAY_SIZE(numCols)];
-	for (int i = 0; i < ARRAY_SIZE(numCols); i++) 
-	{
-		elems[i] = (char)(-1);
-	}
-
-	arraySizes = new char[TOTAL_NUM_ROWS(numCols)];
-	for (int i = 0; i < TOTAL_NUM_ROWS(numCols); i++) {
-		arraySizes[i] = 0;
-	}
+	allocArray();
+	resetArray();
 }
 
 TwoDimArray::TwoDimArray() : elems(nullptr), uniqueElems(nullptr), arraySizes(nullptr), numUnique(0), currUniqueIndex(-1), numRows(1), numCols(6)
 {
 #ifdef _DEBUG
-	std::cerr << "Default constructor" << std::endl;
+	std::cerr << "Default constructor Running! (Shouldnt happen)" << std::endl;
 #endif
-	uniqueElems = new char[numCols];
-	elems = new char[ARRAY_SIZE(numCols)];
-	arraySizes = new char[TOTAL_NUM_ROWS(numCols)];
+	allocArray();
+	resetArray();
+}
+
+void TwoDimArray::replaceArray(const TwoDimArray& other) 
+{
+	allocArray();
+
+	for (int i = 0; i < numCols; i++) {
+		uniqueElems[i] = other.uniqueElems[i];
+	}
+
+	for (int i = 0; i < ARRAY_SIZE(numCols); i++) 
+	{
+		elems[i] = other.elems[i];
+	}
+
+	for (int i = 0; i < TOTAL_NUM_ROWS(numCols); i++) {
+		arraySizes[i] = other.arraySizes[i];
+	}
 }
 
 TwoDimArray::TwoDimArray(const TwoDimArray& other)
@@ -50,21 +61,14 @@ TwoDimArray::TwoDimArray(const TwoDimArray& other)
 	numRows = other.numRows;
 	numCols = other.numCols;
 
-	uniqueElems = new char[numCols];
-	for (int i = 0; i < numCols; i++) {
-		uniqueElems[i] = other.uniqueElems[i];
-	}
+	this->replaceArray(other);
+}
 
-	elems = new char[ARRAY_SIZE(numCols)];
-	for (int i = 0; i < ARRAY_SIZE(numCols); i++) 
-	{
-		elems[i] = other.elems[i];
-	}
-
-	arraySizes = new char[TOTAL_NUM_ROWS(numCols)];
-	for (int i = 0; i < TOTAL_NUM_ROWS(numCols); i++) {
-		arraySizes[i] = other.arraySizes[i];
-	}
+void TwoDimArray::deleteArray()
+{
+	delete[]uniqueElems;
+	delete[]elems;
+	delete[]arraySizes;
 }
 
 TwoDimArray& TwoDimArray::operator=(const TwoDimArray& other) 
@@ -75,24 +79,8 @@ TwoDimArray& TwoDimArray::operator=(const TwoDimArray& other)
 		numRows = other.numRows;
 		numCols = other.numCols;
 
-		delete[]uniqueElems;
-		uniqueElems = new char[numCols];
-		for (int i = 0; i < numCols; i++) {
-			uniqueElems[i] = other.uniqueElems[i];
-		}
-
-		delete[]elems;
-		elems = new char[ARRAY_SIZE(numCols)];
-		for (int i = 0; i < ARRAY_SIZE(numCols); i++)
-		{
-			elems[i] = other.elems[i];
-		}
-
-		delete[]arraySizes;
-		arraySizes = new char[TOTAL_NUM_ROWS(numCols)];
-		for (int i = 0; i < TOTAL_NUM_ROWS(numCols); i++) {
-			arraySizes[i] = other.arraySizes[i];
-		}
+		deleteArray();
+		this->replaceArray(other);
 	}
 
 	return *this;
@@ -100,14 +88,11 @@ TwoDimArray& TwoDimArray::operator=(const TwoDimArray& other)
 
 TwoDimArray::~TwoDimArray() 
 {
-	delete[]elems;
-	delete[]uniqueElems;
-	delete[]arraySizes;
+	deleteArray();
 }
 
 void TwoDimArray::resetArray() 
 {
-
 	for (int i = 0; i < numRows * numCols; i++) 
 	{
 		elems[i] = -1;
@@ -118,12 +103,9 @@ void TwoDimArray::resetArray()
 		arraySizes[i] = 0;
 	}
 
-	int currIndex;
-	while ((currIndex = getNextUnique()) != -1) 
-	{
-		uniqueElems[currIndex] = -1;
+	for (int i = 0; i < numCols; i++) {
+		uniqueElems[i] = -1;
 	}
 
-	numRows = 0;
 	numUnique = 0;
 }

@@ -3,6 +3,7 @@
 #include "Card.h"
 #include "Random.h"
 
+/*An unshuffed deck in CardEnum form - used to initialize deck*/
 #define UNSHUFFLED_DECK   CardEnum::TWD, CardEnum::THD, CardEnum::FOD, CardEnum::FID, CardEnum::SID, CardEnum::SED, CardEnum::EID, \
 						  CardEnum::NID, CardEnum::TED, CardEnum::JAD, CardEnum::QUD, CardEnum::KID, CardEnum::ACD,\
 						  CardEnum::TWH, CardEnum::THH, CardEnum::FOH, CardEnum::FIH, CardEnum::SIH, CardEnum::SEH, CardEnum::EIH, \
@@ -12,7 +13,7 @@
 						  CardEnum::TWS, CardEnum::THS, CardEnum::FOS, CardEnum::FIS, CardEnum::SIS, CardEnum::SES, CardEnum::EIS, \
 						  CardEnum::NIS, CardEnum::TES, CardEnum::JAS, CardEnum::QUS, CardEnum::KIS, CardEnum::ACS 
 
-constexpr unsigned char NUM_CARDS_IN_DECK = 52;
+constexpr int NUM_CARDS_IN_DECK = 52;
 
 class Deck 
 {
@@ -20,20 +21,33 @@ private:
 	CardEnum cardsLeft[NUM_CARDS_IN_DECK];
 	unsigned char numCardsLeft;
 	unsigned char numCardsAfterHands;
+
+	/*Generator used to grab a random card from those remaining*/
 	Random generator;
 
+	/*Used to get the next card in the remaining deck randomly*/
 	CardEnum getNextCard();
 public:
+	/*Initialize deck and random number generator to either time null or a desired seed*/
 	Deck();
-	//Deck(const Deck&);
 	Deck(unsigned int initSeed);
 
+	/*Change the RNG seed manually*/
 	void changeSeed(int newSeed);
+
+	/*Bring all of the cards back into the deck*/
 	void resetEntireDeck();
+
+	/*Bring all of the pool cards back into the deck*/
 	void resetPool();
+
+	/*Deal out a hand card*/
 	Card getNextHandCard();
+
+	/*Deal out a pool card*/
 	Card getNextPoolCard();
 
+	/*Print the cards in the deck*/
 	void printDeck();
 };
 

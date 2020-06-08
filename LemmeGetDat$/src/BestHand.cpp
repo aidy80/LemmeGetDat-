@@ -32,7 +32,20 @@ inline unsigned char isWinning(unsigned char winningHands, unsigned char k) {
 	return (unsigned char)((bool)(winningHands & PLAYER_BIT_PACK[k]));
 }
 
-std::pair<char, char> getKickers(Card card1, Card card2, Pool& pool, unsigned char includeMap) 
+/*Looks at cards 1 and 2 to determine if either can be considered as 
+kickers given the pool signified by include map. 
+
+Params: cards 1 and 2 - the cards to be considered
+		pool - the pool currently on board
+		includeMap - a binary map signifying the pool cards which should be considered.
+					 If includeMap = 0010011, only the first two cards on the flop and 
+					 the river should be considered
+					 
+Return: A pair of numbers signifying the kickers. If a given card can be considered a kicker, 
+		it is returned in pair as its number value. Otherwise, a -1 is placed. Pair is sorted such 
+		that the larger kicker is in the first spot.
+*/
+std::pair<char, char> getKickers(const Card card1, const Card card2, const Pool& pool, const unsigned char includeMap) 
 {
 	std::pair<char, char> kickers;
 
@@ -75,8 +88,24 @@ std::pair<char, char> getKickers(Card card1, Card card2, Pool& pool, unsigned ch
 	return kickers;
 }
 
-char possibleFlush(Pool& pool, char* suitHist, unsigned char& includeMap)
+/*Determine whether there is a possible flush given the pool and which cards would be 
+considered in the flush if there were one. 
+
+Params: pool - the current pool 
+		suitHist - a histogram used to count the number of each suit in the pool
+		includeMap - a binary map that is written in this function. It will show 
+					 which cards have the "flush suit" if there is indeed a possible flush
+					 (at least 3 cards on pool with the same suit).
+					 If the flush suit is hearts and the outputtedinclude map is
+					 0010011, we know that the first two cards on the flop and the river 
+					 are all the flush suit
+
+Return: a char representing the flush suit. The same numerics is used as the Card struct
+(see Card.h). If there is no possible flush on the pool, -1 is returned
+*/
+char possibleFlush(const Pool& pool, char* suitHist, unsigned char& includeMap)
 {
+	includeMap = 0;
 	unsigned char i;
 	for (i = 0; i < NUM_POOL_CARDS; i++)
 	{
@@ -108,19 +137,29 @@ char possibleFlush(Pool& pool, char* suitHist, unsigned char& includeMap)
 	return flushSuit;
 }
 
-char checkFlush(Pool& pool, Hand* hands, TwoDimArray& bestHands, PokerHand* pokerhands)
+/*Determine which hands have a flush. 
+Params: pool - the cards on the pool
+		hands - the array of all players hands
+		bestHands - a 2D array which contains info about the players currently in the game (not folded)
+		pokerhands - an array of pokerhand structs, one for each of the hands in the hands array. Each struct 
+		describes the type of pokerhand that player has. If a flush is present for a given hand(s), the "flush"
+		field will be set to true and kickers will be assigned if the player has any valid kicker
+		
+		
+Return: The "flush suit" of the board. I.e. if there are at least 3 cards on the pool with the same suit. If 
+there is no possible flush on the pool, -1 is returned.*/
+char checkFlush(const Pool& pool, const Hand* hands, TwoDimArray& bestHands, PokerHand* pokerhands)
 {
 	char suitHist[NUM_SUITS];
 	for (int i = 0; i < NUM_SUITS; i++) {
 		suitHist[i] = 0;
 	}
 
-	unsigned char includeMap = 0; 
+	unsigned char includeMap; 
 	char flushSuit = possibleFlush(pool, suitHist, includeMap);
 
 	if (flushSuit != -1) 
 	{
-
 		int currPlayer;
 		while ((currPlayer = bestHands.getNextUnique()) != -1) 
 		{
@@ -156,7 +195,84 @@ char checkFlush(Pool& pool, Hand* hands, TwoDimArray& bestHands, PokerHand* poke
 	return flushSuit;
 }
 
-void testPoolStraight(Pool& pool, unsigned char startCardIndex, unsigned char endCardIndex, Hand* hands, TwoDimArray& bestHands, PokerHand* pokerhands, char flushSuit)
+/*Fill in the current straight with cards from currHand if they fit into the top and bottom of 
+the current straight (defined by lowestCard and highestCard) and numStraightCards for the 
+number of cards between them. 
+See testPoolStraight for more parameter info */
+inline void testHighLowStrCards(const Hand currHand, int& lowestCard, int& highestCard, 
+								int numUsedHandCards, Card* usedHandCards) {
+	while (numUsedHandCards < 2)
+	{
+		if (FitsInLowest(usedHandCards[0], currHand.cards[0], lowestCard))
+		{
+			lowestCard = currHand.cards[0].number;
+			usedHandCards[0] = currHand.cards[0];
+		}
+		else if (FitsInLowest(usedHandCards[0], currHand.cards[1], lowestCard)) {
+			lowestCard = currHand.cards[1].number;
+			usedHandCards[0] = currHand.cards[1];
+		}
+		else if (FitsInHighest(usedHandCards[0], currHand.cards[0], highestCard)) {
+			highestCard = currHand.cards[0].number;
+			usedHandCards[0] = currHand.cards[0];
+		}
+		else if (FitsInHighest(usedHandCards[0], currHand.cards[1], highestCard)) {
+			highestCard = currHand.cards[1].number;
+			usedHandCards[0] = currHand.cards[1];
+		}
+		else {
+			break;
+		}
+		numUsedHandCards++;
+	}
+}
+
+
+
+/*Check the pool subsection to see if the given "currHand" fills in the gaps preventing the pool 
+from being a straight on its own. If some card in the currHand does fill a needed gap, usedHandCards 
+is set to include it, and the returned "numUsedHandCards" denotes the number of hand cards that were used to 
+fill gaps. If the proper gap was not filled, gotoNext is set to true. Check the function "testPoolStraight" for the rest of the parameters*/
+inline int checkPoolGaps(const Pool& pool, const Hand& currHand, int startCardIndex, int endCardIndex, bool& gotoNext, char flushSuit, Card* usedHandCards)
+{
+	int numUsedHandCards = 0;
+
+	for (int i = startCardIndex; !gotoNext && i < endCardIndex; i++)
+	{
+		int poolSpacing = pool.cards[i + 1].number - pool.cards[i].number - 1;
+		for (int j = 0; j < poolSpacing; j++) {
+			int neededCard = pool.cards[i].number + j + 1;
+			if ((currHand.cards[0].number == neededCard) && SuitRequirement(currHand.cards[0], flushSuit)) {
+				usedHandCards[numUsedHandCards] = currHand.cards[0];
+			}
+			else if ((currHand.cards[1].number == neededCard) && SuitRequirement(currHand.cards[1], flushSuit)) {
+				usedHandCards[numUsedHandCards] = currHand.cards[1];
+			}
+			else {
+				gotoNext = true;
+				continue;
+			}
+			numUsedHandCards++;
+		}
+	}
+
+	return numUsedHandCards;
+}
+
+/*Test whether any hands has a straight using a specified subsection of pool cards. If so, mark the result in the pokerhands array
+
+Params: pool - the pool cards. They must come sorted in order from lowest number to highest number
+		startCardIndex, endCardIndex - The first and last pool indices to consider. So if start=1 and end is 5, 
+									   all cards on the pool will be considered except for the first card on the flop
+		hands - the array of all hands on the table
+		bestHands - a two dimensional array with information about which players have not yet folded (whose hands must be checked for straights)
+		pokerhands - an array of pokerhands structs whose "straight" fields will be set to true if the corresponding player has a straight.
+				     additionally, if there is a straight, kicker1 will be set to the highest card in the straight.
+		flushSuit - If a straightflush is being tested for, a flushSuit which is not -1 will indicate that we should only consider cards 
+					with the same suit as flushsuit (a numerical representation identical to the Card struct in Card.h)
+*/
+void testPoolStraight(const Pool& pool, const unsigned char startCardIndex, const unsigned char endCardIndex, const Hand* hands, 
+					  TwoDimArray& bestHands, PokerHand* pokerhands, const char flushSuit = -1)
 {	
 	int currPlayer;
 	while ((currPlayer = bestHands.getNextUnique()) != -1) {
@@ -169,62 +285,16 @@ void testPoolStraight(Pool& pool, unsigned char startCardIndex, unsigned char en
 			}
 		}
 
-		Card usedHandCards[2] = { Card::NULL_CARD, Card::NULL_CARD };
-		unsigned char numUsedHandCards = 0;
 		int lowestCard = pool.cards[startCardIndex].number;
 		int highestCard = pool.cards[endCardIndex].number;
-		int numStraightCards = highestCard - lowestCard + 1;
+		Card usedHandCards[2] = { Card::NULL_CARD, Card::NULL_CARD };
+		int numUsedHandCards = checkPoolGaps(pool, hands[currPlayer], startCardIndex, endCardIndex, 
+																	gotoNext, flushSuit, usedHandCards);
 
-		for (int i = startCardIndex; !gotoNext && i < endCardIndex; i++)
-		{
-			int poolSpacing = pool.cards[i + 1].number - pool.cards[i].number - 1;
-			for (int j = 0; j < poolSpacing; j++) {
-				int neededCard = pool.cards[i].number + j + 1;
-				if ((hands[currPlayer].cards[0].number == neededCard) && SuitRequirement(hands[currPlayer].cards[0], flushSuit)) {
-					usedHandCards[numUsedHandCards] = hands[currPlayer].cards[0];
-				}
-				else if ((hands[currPlayer].cards[1].number == neededCard) && SuitRequirement(hands[currPlayer].cards[1], flushSuit)) {
-					usedHandCards[numUsedHandCards] = hands[currPlayer].cards[1];
-				}
-				else {
-					gotoNext = true;
-					continue;
-				}
-				numUsedHandCards++;
-			}
-		}
-	
 		if (!gotoNext) {
-			while (numUsedHandCards < 2)
-			{
-				if (FitsInLowest(usedHandCards[0], hands[currPlayer].cards[0], lowestCard))
-				{
-					lowestCard = hands[currPlayer].cards[0].number;
-					numStraightCards++;
-					usedHandCards[0] = hands[currPlayer].cards[0];
-				} 
-				else if (FitsInLowest(usedHandCards[0], hands[currPlayer].cards[1], lowestCard)) {
-					lowestCard = hands[currPlayer].cards[1].number;
-					numStraightCards++;
-					usedHandCards[0] = hands[currPlayer].cards[1];
-				} 
-				else if (FitsInHighest(usedHandCards[0], hands[currPlayer].cards[0], highestCard)) {
-					highestCard = hands[currPlayer].cards[0].number;
-					numStraightCards++;
-					usedHandCards[0] = hands[currPlayer].cards[0];
-				} 
-				else if (FitsInHighest(usedHandCards[0], hands[currPlayer].cards[1], highestCard)) {
-					highestCard = hands[currPlayer].cards[1].number;
-					numStraightCards++;
-					usedHandCards[0] = hands[currPlayer].cards[1];
-				}
-				else {
-					break;
-				}
-				numUsedHandCards++;
-			}
+			testHighLowStrCards(hands[currPlayer], lowestCard, highestCard, numUsedHandCards, usedHandCards);
 
-			if (numStraightCards > 4) {
+			if ((highestCard - lowestCard + 1) > 4) {
 				if (flushSuit == -1) {
 					pokerhands[currPlayer].straight = true;
 				}
@@ -239,10 +309,11 @@ void testPoolStraight(Pool& pool, unsigned char startCardIndex, unsigned char en
 	}
 }
 
-void checkStraight(Pool& originalPool, Hand* hands, TwoDimArray& bestHands, PokerHand* pokerhands, char flushSuit)
+/*Take an original pool of cards and create an applied pool which, if there is a flushSuit!=-1, 
+does not include pool non flushSuit cards. If flushSuit==-1, duplicate numbers are not included in applied pool.
+See check straight for parameter info*/
+inline void fillAppliedPool(const Pool& originalPool, Pool& appliedPool, int& numPoolCards, char flushSuit) 
 {
-	unsigned char numPoolCards = 0;
-	Pool appliedPool; //Change to card array?
 	if (flushSuit != -1) {
 		for (int i = 0; i < NUM_POOL_CARDS; i++) {
 			if (originalPool.cards[i].suit == flushSuit) {
@@ -261,13 +332,30 @@ void checkStraight(Pool& originalPool, Hand* hands, TwoDimArray& bestHands, Poke
 			}
 		}
 	}
+}
+
+/*
+Check which players have straights
+
+Params: pool - the pool cards. They must come sorted in order from smallest number to largest number
+		hands - the array of all hands on the table
+		bestHands - a two dimensional array with information about which players have not yet folded (whose hands must be checked for straights)
+		pokerhands - an array of pokerhands structs whose "straight" fields will be set to true if the corresponding player has a straight.
+				     additionally, if there is a straight, kicker1 will be set to the highest card in the straight.
+		flushSuit - If a straightflush is being tested for, a flushSuit which is not -1 will indicate that we should only consider cards 
+					with the same suit as flushsuit (a numerical representation identical to the Card struct in Card.h)
+*/
+void checkStraight(const Pool& originalPool, const Hand* hands, TwoDimArray& bestHands, PokerHand* pokerhands, const char flushSuit = -1)
+{
+	int numPoolCards = 0;
+	Pool appliedPool; //Change to card array?
+	fillAppliedPool(originalPool, appliedPool, numPoolCards, flushSuit);
 
 	unsigned char* poolSpacing = (unsigned char*)alloca(sizeof(unsigned char) * (numPoolCards - 1));
 	for (int i = 0; i < numPoolCards - 1; i++) 
 	{
 		poolSpacing[i] = appliedPool.cards[i + 1].number - appliedPool.cards[i].number - 1;
 	}
-
 	 
 	for (int i = 0; i < numPoolCards - 2; i++) {
 		int totalPoolSpacing = 0;

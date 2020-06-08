@@ -2,7 +2,7 @@
 
 const Card Card::NULL_CARD;
 
-std::string getStrRep(char number, char suit) {
+std::string getStrRep(const char number, const char suit) {
 	std::string strRep;
 
 	switch (number)
@@ -69,14 +69,14 @@ std::string getStrRep(char number, char suit) {
 	return strRep;
 }
 
-std::string getCardsString(CardEnum card)
+std::string getCardsString(const CardEnum card)
 {
 	char number = getCardsNumber(card);
 	char suit = getCardsSuit(card);
 	return getStrRep(number, suit);
 }
 
-std::string getCardsString(Card card)
+std::string getCardsString(const Card card)
 {
 	return getStrRep(card.number, card.suit);
 }

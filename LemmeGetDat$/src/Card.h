@@ -1,7 +1,8 @@
 #pragma once
 #include "pch.h"
 
-//Representation of all cards in the deck
+/*Representation of all cards in the deck as an enum. Used for cases of random number 
+generation to pick a random card*/
 enum class CardEnum
 {
 	TWD, THD, FOD, FID, SID, SED, EID, NID, TED, JAD, QUD, KID, ACD,
@@ -43,11 +44,17 @@ Return - The representation of the card in string form
 */
 std::string getCardsString(CardEnum card);
 
-
+/*Representation of a card using its number and suit in two separate fields. 
+Better than CardEnum in that mathematical operations arent needed to extract num and suit*/
 struct Card 
 {
+	/*Represents the cards number. 0 is a "2 of _" and 12 is the "Ace of _"*/
 	char number;
+	
+	/*Represents the cards suit. 0 is diamonds, 1 is hearts, 2 is clubs, 3 is spades*/
 	char suit;
+
+	/*Represents when there is no card present*/
 	static const Card NULL_CARD;
 
 	Card(CardEnum card) :
@@ -58,7 +65,7 @@ struct Card
 
 	Card() : number(-1), suit(-1) {}
 
-	bool operator!=(Card other) 
+	bool operator!=(const Card other) const
 	{
 		return (number != other.number) || (suit != other.suit);
 	}
@@ -72,6 +79,7 @@ Return - The representation of the card in string form
 */
 std::string getCardsString(Card card);
 
+/*Convert from a Card representation to a CardEnum representation*/
 inline CardEnum CardToEnum(Card card) 
 {
 	return (CardEnum)(card.number + card.suit * 13);

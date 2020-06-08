@@ -8,18 +8,6 @@ Deck::Deck(unsigned int initSeed) :
 	generator(initSeed), numCardsLeft(NUM_CARDS_IN_DECK), 
 	cardsLeft{UNSHUFFLED_DECK}, numCardsAfterHands(NUM_CARDS_IN_DECK) {}
 
-/*
-Deck::Deck(const Deck& other):
-	generator(other.generator), numCardsLeft(other.numCardsLeft),
-	cardsLeft(), numCardsAfterHands(other.numCardsAfterHands)
-{
-	for (int i = 0; i < NUM_CARDS_IN_DECK; i++) 
-	{
-		cardsLeft[i] = other.cardsLeft[i];
-	}
-}
-*/
-
 CardEnum Deck::getNextCard()
 {
 	unsigned int randomNum = generator.getRandomNum(numCardsLeft);

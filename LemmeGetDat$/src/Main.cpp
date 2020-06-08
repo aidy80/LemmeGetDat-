@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "Card.h"
-#include "BHunitTests.h"
+#include "UnitTests/TestBestHand.h"
+#include "UnitTests/TestDeck.h"
 
 void runUnitTests()
 {

@@ -36,10 +36,16 @@
     <ClCompile Include="src\BestHand.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\BHunitTests.cpp">
+    <ClCompile Include="src\TwoDimArray.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\TwoDimArray.cpp">
+    <ClCompile Include="src\UnitTests\EquityCalc.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\UnitTests\TestDeck.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\UnitTests\TestBestHand.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -51,9 +57,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Card.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Instrumentor.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Random.h">
@@ -68,10 +71,16 @@
     <ClInclude Include="src\BestHand.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\BHunitTests.h">
+    <ClInclude Include="src\TwoDimArray.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\TwoDimArray.h">
+    <ClInclude Include="src\UnitTests\EquityCalc.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\UnitTests\TestDeck.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\UnitTests\TestBestHand.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
