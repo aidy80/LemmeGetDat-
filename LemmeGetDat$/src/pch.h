@@ -15,5 +15,6 @@
 #include <mutex>
 #include <chrono>
 #include <climits>
+#include <stdint.h>
 
 #define MULTITHREAD

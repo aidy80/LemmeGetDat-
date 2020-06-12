@@ -1,18 +1,21 @@
 #include "TestBestHand.h"
 
-void testBestHand(Pool& pool, Hand *hands, std::string description, std::vector<std::vector<char>> expected, std::optional<std::vector<std::vector<int>>> pots = std::nullopt) 
+void testBestHand(Pool& pool, Hand *hands, std::string description, std::vector<std::vector<int>> expected, std::optional<std::vector<std::vector<int>>> pots = std::nullopt) 
 {
+#ifdef _DEBUG
+	assert(expected.size() < INT_MAX && expected[0].size() < INT_MAX);
+#endif
 	TwoDimArray bestHands(expected.size(), expected[0].size());
 	if (pots.has_value()) {
-		for (unsigned int i = 0; i < pots->size(); i++) {
-			for (unsigned int j = 0; j < pots->at(i).size(); j++) {
+		for (unsigned i = 0; i < pots->size(); i++) {
+			for (unsigned j = 0; j < pots->at(i).size(); j++) {
 				bestHands.set(i, j, pots->at(i).at(j));
 			}
 		}
 	}
 	else {
-		for (unsigned int i = 0; i < expected.size(); i++) {
-			for (unsigned int j = 0; j < expected[i].size(); j++) {
+		for (unsigned i = 0; i < expected.size(); i++) {
+			for (unsigned j = 0; j < expected[i].size(); j++) {
 				bestHands.set(i, j, j);
 			}
 		}
@@ -20,19 +23,19 @@ void testBestHand(Pool& pool, Hand *hands, std::string description, std::vector<
 
 	getBestHands(pool, hands, bestHands);
 	std::cout << description << "\nExpected: \n";
-	for (unsigned int i = 0; i < expected.size(); i++) {
+	for (unsigned i = 0; i < expected.size(); i++) {
 		std::cout << "| ";
-		for (unsigned int j = 0; j < expected[i].size(); j++) {
-			std::cout << (int)expected[i][j] << " ";
+		for (unsigned j = 0; j < expected[i].size(); j++) {
+			std::cout << expected[i][j] << " ";
 		}
 		std::cout << "|\n";
 	}
 	std::cout << "\nActual: \n";
 
 	bool failed = false;;
-	for (unsigned int i = 0; i < expected.size(); i++) {
+	for (unsigned i = 0; i < expected.size(); i++) {
 		std::cout << "| ";
-		for (unsigned int j = 0; j < expected[i].size(); j++) {
+		for (unsigned j = 0; j < expected[i].size(); j++) {
 			std::cout << (int)bestHands.get(i, j) << " ";
 			if (bestHands.get(i, j) != expected[i][j]) {
 				failed = true;
@@ -599,11 +602,11 @@ void testHighCards()
 	std::cout << "\n\n" << std::endl;
 }
 
-void testCalcPreFlopEquity(Hand* hands, unsigned char numHands, Deck& deck){
+void testCalcPreFlopEquity(Hand* hands, int8_t numHands, Deck& deck){
 	std::vector<float> equity = calcPreFlopEquity(hands, numHands, deck);
 	std::cout << "All in preflop results in: " << std::endl;
 		
-	for (unsigned int i = 0; i < (equity.size() / 2); i++)
+	for (unsigned i = 0; i < (equity.size() / 2); i++)
 	{
 		std::cout << getCardsString(hands[i].cards[0]) << " + "
 			<< getCardsString(hands[i].cards[1]) << ". Equity: "
@@ -615,8 +618,8 @@ void testCalcPreFlopEquity(Hand* hands, unsigned char numHands, Deck& deck){
 void testTieCase() 
 {
 	Deck deck(5);
-	const unsigned int numTrials = 20;
-	const unsigned int numHands = 2;
+	const int numTrials = 20;
+	const int numHands = 2;
 	Hand hands[numHands];
 	Pool pool(deck);
 
@@ -627,7 +630,7 @@ void testTieCase()
 
 	for (int i = 0; i < numTrials; i++) {
 		getBestHands(pool, hands, bestHands);
-		printPool(pool);
+		printPool(pool, NUM_POOL_CARDS);
 		if (bestHands.get(0, 1) == -1) {
 			std::cout << "Player " << (int)bestHands.get(0, 0) << " took the W\n" << std::endl;
 		}
@@ -639,15 +642,15 @@ void testTieCase()
 	}
 }
 
-void testBestHandAndEquity(const unsigned int numHands, const unsigned int numTrials)
+void testBestHandAndEquity(const int numHands, const int numTrials)
 {
 	std::cout << numHands << " Player RANDOM HANDS and POOLS, BEST HAND, and EQUITY TESTS" << std::endl;
 
 	Hand* hands = new Hand[numHands];
 	Deck deck;
-	for (unsigned int i = 0; i < numTrials; i++)
+	for (int i = 0; i < numTrials; i++)
 	{
-		for (unsigned int k = 0; k < numHands; k++) {
+		for (int k = 0; k < numHands; k++) {
 			hands[k].setHand(deck.getNextHandCard(), deck.getNextHandCard());
 		}
 

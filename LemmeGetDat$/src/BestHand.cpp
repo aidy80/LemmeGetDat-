@@ -12,15 +12,15 @@ inline bool SuitRequirement(Card card, int flushSuit) {
 	return ((flushSuit == -1) || (flushSuit == card.suit));
 }
 
-inline bool FitsInLowest(Card usedCard, Card handCard, char lowestCard) {
+inline bool FitsInLowest(Card usedCard, Card handCard, int lowestCard) {
 	return (usedCard != handCard && handCard.number == (lowestCard - 1));
 }
 
-inline bool FitsInHighest(Card usedCard, Card handCard, char highestCard) {
+inline bool FitsInHighest(Card usedCard, Card handCard, int highestCard) {
 	return (usedCard != handCard && handCard.number == (highestCard + 1));
 }
 
-inline bool isHandCard(char firstNum, char secNum, char cardNum) {
+inline bool isHandCard(int firstNum, int secNum, int cardNum) {
 	return (firstNum == cardNum || secNum == cardNum);
 }
 
@@ -28,8 +28,8 @@ inline bool isQuads(PokerHand* pokerhands, int k) {
 	return (pokerhands[k].pair[0] == pokerhands[k].pair[1]);
 }
 
-inline unsigned char isWinning(unsigned char winningHands, unsigned char k) {
-	return (unsigned char)((bool)(winningHands & PLAYER_BIT_PACK[k]));
+inline int isWinning(int winningHands, int k) {
+	return (int)((bool)(winningHands & PLAYER_BIT_PACK[k]));
 }
 
 /*Looks at cards 1 and 2 to determine if either can be considered as 
@@ -45,9 +45,9 @@ Return: A pair of numbers signifying the kickers. If a given card can be conside
 		it is returned in pair as its number value. Otherwise, a -1 is placed. Pair is sorted such 
 		that the larger kicker is in the first spot.
 */
-std::pair<char, char> getKickers(const Card card1, const Card card2, const Pool& pool, const unsigned char includeMap) 
+std::pair<int, int> getKickers(const Card card1, const Card card2, const Pool& pool, const int includeMap) 
 {
-	std::pair<char, char> kickers;
+	std::pair<int, int> kickers;
 
 	int card1Less = 0, card2Less = 0;
 
@@ -100,20 +100,19 @@ Params: pool - the current pool
 					 0010011, we know that the first two cards on the flop and the river 
 					 are all the flush suit
 
-Return: a char representing the flush suit. The same numerics is used as the Card struct
+Return: a int representing the flush suit. The same numerics is used as the Card struct
 (see Card.h). If there is no possible flush on the pool, -1 is returned
 */
-char possibleFlush(const Pool& pool, char* suitHist, unsigned char& includeMap)
+int possibleFlush(const Pool& pool, int* suitHist, int& includeMap)
 {
 	includeMap = 0;
-	unsigned char i;
-	for (i = 0; i < NUM_POOL_CARDS; i++)
+	for (int i = 0; i < NUM_POOL_CARDS; i++)
 	{
 		suitHist[pool.cards[i].suit]++;
 	}
 	
-	char flushSuit = -1;
-	for (char i = 0; i < NUM_SUITS; i++)
+	int flushSuit = -1;
+	for (int i = 0; i < NUM_SUITS; i++)
 	{
 		if (suitHist[i] > 2)
 		{
@@ -148,29 +147,29 @@ Params: pool - the cards on the pool
 		
 Return: The "flush suit" of the board. I.e. if there are at least 3 cards on the pool with the same suit. If 
 there is no possible flush on the pool, -1 is returned.*/
-char checkFlush(const Pool& pool, const Hand* hands, TwoDimArray& bestHands, PokerHand* pokerhands)
+int checkFlush(const Pool& pool, const Hand* hands, TwoDimArray& bestHands, PokerHand* pokerhands)
 {
-	char suitHist[NUM_SUITS];
+	int suitHist[NUM_SUITS];
 	for (int i = 0; i < NUM_SUITS; i++) {
 		suitHist[i] = 0;
 	}
 
-	unsigned char includeMap; 
-	char flushSuit = possibleFlush(pool, suitHist, includeMap);
+	int includeMap; 
+	int flushSuit = possibleFlush(pool, suitHist, includeMap);
 
 	if (flushSuit != -1) 
 	{
 		int currPlayer;
 		while ((currPlayer = bestHands.getNextUnique()) != -1) 
 		{
-			char firstSuit = hands[currPlayer].cards[0].suit;
-			char secSuit = hands[currPlayer].cards[1].suit;
+			int firstSuit = hands[currPlayer].cards[0].suit;
+			int secSuit = hands[currPlayer].cards[1].suit;
 			
 			if ( (suitHist[flushSuit] + (firstSuit == flushSuit) + (secSuit == flushSuit)) > 4 ) 
 			{
 				pokerhands[currPlayer].flush = true;
 			
-				std::pair<char, char> kickers;
+				std::pair<int, int> kickers;
 
 				if (firstSuit == flushSuit) {
 					if (secSuit == flushSuit) {
@@ -199,7 +198,7 @@ char checkFlush(const Pool& pool, const Hand* hands, TwoDimArray& bestHands, Pok
 the current straight (defined by lowestCard and highestCard) and numStraightCards for the 
 number of cards between them. 
 See testPoolStraight for more parameter info */
-inline void testHighLowStrCards(const Hand currHand, int& lowestCard, int& highestCard, 
+void testHighLowStrCards(const Hand currHand, int& lowestCard, int& highestCard, 
 								int numUsedHandCards, Card* usedHandCards) {
 	while (numUsedHandCards < 2)
 	{
@@ -233,7 +232,7 @@ inline void testHighLowStrCards(const Hand currHand, int& lowestCard, int& highe
 from being a straight on its own. If some card in the currHand does fill a needed gap, usedHandCards 
 is set to include it, and the returned "numUsedHandCards" denotes the number of hand cards that were used to 
 fill gaps. If the proper gap was not filled, gotoNext is set to true. Check the function "testPoolStraight" for the rest of the parameters*/
-inline int checkPoolGaps(const Pool& pool, const Hand& currHand, int startCardIndex, int endCardIndex, bool& gotoNext, char flushSuit, Card* usedHandCards)
+int checkPoolGaps(const Pool& pool, const Hand& currHand, int startCardIndex, int endCardIndex, bool& gotoNext, int flushSuit, Card* usedHandCards)
 {
 	int numUsedHandCards = 0;
 
@@ -271,8 +270,8 @@ Params: pool - the pool cards. They must come sorted in order from lowest number
 		flushSuit - If a straightflush is being tested for, a flushSuit which is not -1 will indicate that we should only consider cards 
 					with the same suit as flushsuit (a numerical representation identical to the Card struct in Card.h)
 */
-void testPoolStraight(const Pool& pool, const unsigned char startCardIndex, const unsigned char endCardIndex, const Hand* hands, 
-					  TwoDimArray& bestHands, PokerHand* pokerhands, const char flushSuit = -1)
+void testPoolStraight(const Pool& pool, const int startCardIndex, const int endCardIndex, const Hand* hands, 
+					  TwoDimArray& bestHands, PokerHand* pokerhands, const int flushSuit = -1)
 {	
 	int currPlayer;
 	while ((currPlayer = bestHands.getNextUnique()) != -1) {
@@ -315,7 +314,7 @@ does not include pool non flushSuit cards. If flushSuit==-1, duplicate numbers a
 The number of cards in the applied pool is returned
 
 See check straight for parameter info*/
-inline int fillAppliedPool(const Pool& originalPool, Pool& appliedPool, char flushSuit) 
+int fillAppliedPool(const Pool& originalPool, Pool& appliedPool, int flushSuit) 
 {
 	int numPoolCards = 0;
 	if (flushSuit != -1) {
@@ -351,7 +350,7 @@ Params: pool - the pool cards. They must come sorted in order from smallest numb
 		flushSuit - If a straightflush is being tested for, a flushSuit which is not -1 will indicate that we should only consider cards 
 					with the same suit as flushsuit (a numerical representation identical to the Card struct in Card.h)
 */
-void checkStraight(const Pool& originalPool, const Hand* hands, TwoDimArray& bestHands, PokerHand* pokerhands, const char flushSuit = -1)
+void checkStraight(const Pool& originalPool, const Hand* hands, TwoDimArray& bestHands, PokerHand* pokerhands, const int flushSuit = -1)
 {
 	Pool appliedPool; //Change to card array?
 	int numPoolCards = fillAppliedPool(originalPool, appliedPool, flushSuit);
@@ -393,10 +392,10 @@ to contain the likely kickers depending on whether a quad, triple, and/or pair i
 an unsed pair or triple (as is the case with a quad+triple) or any unused pair (as is the case with three pairs)
 
 See checkHighPairTripQuad for more parameter info*/
-inline void processNumHist(int* numHist, const Hand& currHand, const int currPlayer, PokerHand* pokerhands, char& tempKicker1, char& tempKicker2, char& unusedCombo)
+void processNumHist(int* numHist, const Hand& currHand, const int currPlayer, PokerHand* pokerhands, int& tempKicker1, int& tempKicker2, int& unusedCombo)
 {
-	const unsigned char firstNum = currHand.cards[0].number;
-	const unsigned char secNum = currHand.cards[1].number;
+	const int firstNum = currHand.cards[0].number;
+	const int secNum = currHand.cards[1].number;
 
 	for (int i = 0; i < NUM_CARD_NUMBERS; i++) {
 		if (numHist[i] == 2)
@@ -461,7 +460,7 @@ That is, only give a player a kicker if it is used as a single card and comes fr
 remains at a max of 5 cards. So, the player has three jacks, two on board and one in their hand, and they have a nine in hand, that nine will 
 only be considered as a kicker if there are not two higher cards on board (i.e. if there is a king and an ace on board, the nine will not be a kicker)
 */
-inline void fillHistKickers(int* numHist, const Hand& currHand, const int currPlayer, PokerHand* pokerhands, char tempKicker1, char tempKicker2, char unusedCombo) {
+void fillHistKickers(int* numHist, const Hand& currHand, const int currPlayer, PokerHand* pokerhands, int tempKicker1, int tempKicker2, int unusedCombo) {
 	if (isQuads(pokerhands, currPlayer) || (!(pokerhands[currPlayer].flush || pokerhands[currPlayer].straight))) {
 		int i;
 		int numUsed = 0;
@@ -544,9 +543,9 @@ void checkHighPairTripQuad(const Pool& pool, const Hand* hands, TwoDimArray& bes
 
 	int currPlayer;
 	while ((currPlayer = bestHands.getNextUnique()) != -1) {
-		char tempKicker1 = -1;
-		char tempKicker2 = -1;
-		char unusedCombo = -1;
+		int tempKicker1 = -1;
+		int tempKicker2 = -1;
+		int unusedCombo = -1;
 		numHist[hands[currPlayer].cards[0].number]++;
 		numHist[hands[currPlayer].cards[1].number]++;
 
@@ -589,7 +588,7 @@ void insertSort(T* elems, int numElems, std::function<bool(T&, T&)> comparator)
 winType - whether it has the best type of hand (i.e. it is true if the hand had three Jacks if three jacks is the best poker hand out of the players int the pot),
 winWithKicker - whether it has the best type of hand (same as winType) AND it has the best kicker(s) if applicable*/
 struct WinningHand {
-	unsigned char player;
+	int player;
 	bool winType;
 	bool winWithKicker;
 };
@@ -601,7 +600,7 @@ hands will be {12, 11}
 
 See fillBestHand for more param info
 */
-inline void getHighestHand(char* highestHand, const int potNum, TwoDimArray& bestHands, PokerHand* pokerhands, 
+void getHighestHand(int* highestHand, const int potNum, TwoDimArray& bestHands, PokerHand* pokerhands, 
 						   const int winningHands, const HandType winHandType) {
 	for (int i = 0; i < bestHands.getRowSize(potNum); i++)
 	{
@@ -644,7 +643,7 @@ and record whether or not they do into the WinningHand array.
 
 See fillBestHand for more specific param information
 */
-inline void fillWinType(WinningHand* handsWithIndex, char* highestHand, const int potNum, 
+void fillWinType(WinningHand* handsWithIndex, int* highestHand, const int potNum, 
 						TwoDimArray& bestHands, PokerHand* pokerhands, const int winningHands, const HandType winHandType) {
 	for (int i = 0; i < bestHands.getRowSize(potNum); i++) {
 		int currPlayer = bestHands.get(potNum, i);
@@ -740,7 +739,7 @@ players 1 and 2 tied but both beat player 3, we would see the corresponding row 
 void fillBestHands(TwoDimArray& bestHands, const int potNum, const int winningHands, const HandType winHandType, PokerHand* pokerhands) 
 {
 	WinningHand* handsWithIndex = (WinningHand*)_malloca(sizeof(WinningHand) * bestHands.getRowSize(potNum));
-	char highestHand[2] = { -1, -1 };
+	int highestHand[2] = { -1, -1 };
 	
 	getHighestHand(highestHand, potNum, bestHands, pokerhands, winningHands, winHandType);
 	fillWinType(handsWithIndex, highestHand, potNum, bestHands, pokerhands, winningHands, winHandType);
@@ -822,7 +821,7 @@ void getBestHands(Pool& pool, const Hand* allHands, TwoDimArray& bestHands)
 	houseHands = (tripleHands & pairHands) | (tripleHands & twoPairHands);
 
 	for (int i = 0; i < bestHands.getNumRows(); i++) {
-		unsigned char playersInPot = 0;
+		int playersInPot = 0;
 		for (int p = 0; p < bestHands.getRowSize(i); p++) {
 			playersInPot |= PLAYER_BIT_PACK[bestHands.get(i, p)];
 		}

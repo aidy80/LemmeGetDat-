@@ -22,9 +22,9 @@ Obtain the number of a passed enum card. A Two will translate to 0, a three to 1
 Params - card: the enum representation of the card
 Return - the card's number
 */
-inline char getCardsNumber(CardEnum card)
+inline int getCardsNumber(CardEnum card)
 {
-	return (char)card % 13;
+	return (int)(card) % 13;
 }
 
 /*
@@ -34,9 +34,9 @@ club to 2, spade to 3
 Params - card: the enum representation of the card
 Return - the card's suit
 */
-inline char getCardsSuit(CardEnum card)
+inline int getCardsSuit(CardEnum card)
 {
-	return (char)card / 13;
+	return (int)(card) / 13;
 }
 
 /* 
@@ -52,10 +52,10 @@ Better than CardEnum in that mathematical operations arent needed to extract num
 struct Card 
 {
 	/*Represents the cards number. 0 is a "2 of _" and 12 is the "Ace of _"*/
-	char number;
+	int number;
 	
 	/*Represents the cards suit. 0 is diamonds, 1 is hearts, 2 is clubs, 3 is spades*/
-	char suit;
+	int suit;
 
 	/*Represents when there is no card present*/
 	static const Card NULL_CARD;
@@ -63,7 +63,7 @@ struct Card
 	Card(CardEnum card) :
 		number(getCardsNumber(card)), suit(getCardsSuit(card)) {}
 
-	Card(char initNum, char initSuit) :
+	Card(int initNum, int initSuit) :
 		number(initNum), suit(initSuit) {}
 
 	Card() : number(-1), suit(-1) {}
@@ -85,5 +85,5 @@ std::string getCardsString(Card card);
 /*Convert from a Card representation to a CardEnum representation*/
 inline CardEnum CardToEnum(Card card) 
 {
-	return (CardEnum)(card.number + card.suit * 13);
+	return (CardEnum)(card.number + card.suit * NUM_CARD_NUMBERS);
 }

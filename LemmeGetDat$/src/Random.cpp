@@ -3,6 +3,6 @@
 Random::Random() :
 	currRand((unsigned int)time(NULL)) {}
 
-Random::Random(unsigned int initSeed) :
+Random::Random(uint32_t initSeed) :
 	currRand(initSeed) {}
 

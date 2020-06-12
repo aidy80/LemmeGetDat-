@@ -1,23 +1,23 @@
 #include "TwoDimArray.h"
 
-inline char TOTAL_NUM_ROWS(char numCols) 
+inline int TOTAL_NUM_ROWS(int numRows, int numCols) 
 {
-	return numCols - 1;
+	return numRows < numCols - 1 ? numCols - 1 : numRows;
 }
 
-inline char ARRAY_SIZE(char numCols) 
+inline int ARRAY_SIZE(int numRows, int numCols) 
 {
-	return TOTAL_NUM_ROWS(numCols) * numCols;
+	return TOTAL_NUM_ROWS(numRows, numCols) * numCols;
 }
 
 void TwoDimArray::allocArray()
 {
-	uniqueElems = new char[numCols];
-	elems = new char[ARRAY_SIZE(numCols)];
-	arraySizes = new char[TOTAL_NUM_ROWS(numCols)];
+	uniqueElems = new int[numCols];
+	elems = new int[ARRAY_SIZE(numRows, numCols)];
+	arraySizes = new int[TOTAL_NUM_ROWS(numRows, numCols)];
 }
 
-TwoDimArray::TwoDimArray(char initNumRows, char initNumCols) 
+TwoDimArray::TwoDimArray(int initNumRows, int initNumCols) 
 	: elems(nullptr), uniqueElems(nullptr), numUnique(0), currUniqueIndex(-1), numRows(initNumRows), numCols(initNumCols)
 {
 #ifdef _DEBUG
@@ -46,12 +46,12 @@ void TwoDimArray::replaceArray(const TwoDimArray& other)
 		uniqueElems[i] = other.uniqueElems[i];
 	}
 
-	for (int i = 0; i < ARRAY_SIZE(numCols); i++) 
+	for (int i = 0; i < ARRAY_SIZE(numRows, numCols); i++) 
 	{
 		elems[i] = other.elems[i];
 	}
 
-	for (int i = 0; i < TOTAL_NUM_ROWS(numCols); i++) {
+	for (int i = 0; i < TOTAL_NUM_ROWS(numRows, numCols); i++) {
 		arraySizes[i] = other.arraySizes[i];
 	}
 }
@@ -100,7 +100,7 @@ void TwoDimArray::resetArray()
 		elems[i] = -1;
 	}
 
-	for (int i = 0; i < TOTAL_NUM_ROWS(numCols); i++) 
+	for (int i = 0; i < TOTAL_NUM_ROWS(numRows, numCols); i++) 
 	{
 		arraySizes[i] = 0;
 	}
@@ -109,6 +109,61 @@ void TwoDimArray::resetArray()
 		uniqueElems[i] = -1;
 	}
 
-	numRows = 0;
+	numRows = 1;
 	numUnique = 0;
+}
+
+void TwoDimArray::set(int i, int j, int newVal)
+{
+#ifdef _DEBUG
+	assert(numCols * i + j < (numRows+1) * numCols);
+	assert(newVal < numCols);
+	assert(currUniqueIndex == -1);
+	assert(j < arraySizes[i] + 1);
+	assert(i < numRows + 1);
+	assert(newVal < numCols);
+#endif
+	if (newVal > -1) {
+		if (uniqueElems[newVal] == -1) {
+			uniqueElems[newVal] = newVal;
+			numUnique++;
+		}
+	} else if (newVal == -1) 
+	{
+		uniqueElems[elems[numCols * i + j]] = newVal;
+		numUnique--;
+	}
+
+	if (i == numRows && arraySizes[i] == 0)   
+	{
+		numRows++;
+	}
+
+	if (arraySizes[i] == j) {
+		arraySizes[i]++;
+	}
+	elems[numCols * i + j] = newVal;
+}
+
+
+
+/*TODO: Test*/
+void TwoDimArray::pack(int row)
+{
+	for (int i = 0; i < numCols; i++) 
+	{
+		if (elems[i] != -1) 
+		{
+			int j = i - 1;
+			while(elems[j] == -1) 
+			{
+				j--;
+			}
+			if (elems[i - 1] == -1)
+			{
+				elems[j + 1] = elems[i];
+				elems[i] = -1;
+			}
+		}
+	}
 }

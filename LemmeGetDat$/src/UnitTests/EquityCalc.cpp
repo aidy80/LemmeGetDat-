@@ -3,26 +3,26 @@
 static std::mutex numWinLock;
 static std::mutex numTieLock;
 
-constexpr unsigned int NUM_TRIALS = 1712304 * 10; // C(48, 5)
-constexpr unsigned int NUM_THREADS = 8;
-constexpr unsigned int NUM_TRIALS_PER_THREAD = NUM_TRIALS / NUM_THREADS;
+constexpr int NUM_TRIALS = 1712304; // C(48, 5)
+constexpr int NUM_THREADS = 8;
+constexpr int NUM_TRIALS_PER_THREAD = NUM_TRIALS / NUM_THREADS;
 
 void checkWinners(TwoDimArray& winners, Hand* hands, int numHands, Pool& pool) {
 	if (winners.get(0, 0) == -1) //Error check
 	{
-		printPool(pool);
+		printPool(pool, NUM_POOL_CARDS);
 		for (int m = 0; m < numHands; m++) {
 			printHand(hands[m]);
 		}
 		std::cout << "The winners are: ";
 		for (int m = 0; m < numHands; m++) {
-			std::cout << (int)winners.get(0, m) << " ";
+			std::cout << winners.get(0, m) << " ";
 		}
 		std::cout << std::endl;
 	}
 }
 
-void sampleHands(int threadId, int numTrials, unsigned int* numberOfWins, unsigned int* numberOfTies, Deck deck, Hand* hands, int numHands) 
+void sampleHands(int threadId, int numTrials, int32_t* numberOfWins, int32_t* numberOfTies, Deck deck, Hand* hands, int numHands) 
 {
 	TwoDimArray winners(1, numHands);
 	Pool pool;
@@ -68,8 +68,8 @@ std::vector<float> calcPreFlopEquity(Hand* hands, int numHands, Deck& deck)
 	//just call the random card function again.
 	//Nother idea: Create a deck class whose random function will only pull from remaining cards. <--Better
 
-	unsigned int* numberOfWins = (unsigned int*)alloca(numHands * sizeof(unsigned int));
-	unsigned int* numberOfTies = (unsigned int*)alloca(numHands * sizeof(unsigned int));
+	int* numberOfWins = (int*)_malloca(numHands * sizeof(int));
+	int* numberOfTies = (int*)_malloca(numHands * sizeof(int));
 
 	for (int i = 0; i < numHands; i++) {
 		numberOfWins[i] = 0;
@@ -103,6 +103,9 @@ std::vector<float> calcPreFlopEquity(Hand* hands, int numHands, Deck& deck)
 	{
 		equity.push_back((float)numberOfTies[i] / (float)NUM_TRIALS);
 	}
+
+	_freea(numberOfTies);
+	_freea(numberOfWins);
 
 	return equity;
 }

@@ -17,21 +17,21 @@ are set
 class TwoDimArray
 {
 private:
-	char* elems;
-	char* uniqueElems;
-	char* arraySizes;
-	char numUnique;
-	char currUniqueIndex;
+	int* elems;
+	int* uniqueElems;
+	int* arraySizes;
+	int numUnique;
+	int currUniqueIndex;
 
-	char numRows;
-	char numCols;
+	int numRows;
+	int numCols;
 
 	void allocArray();
 	void replaceArray(const TwoDimArray&);
 	void deleteArray();
 public:
 	/*Constructors - allocate and set all elements in 2Darray to -1*/
-	TwoDimArray(char numRows, char numCols);
+	TwoDimArray(int numRows, int numCols);
 	TwoDimArray();
 
 	/*Copy and Assignement constructors: */
@@ -41,23 +41,23 @@ public:
 	~TwoDimArray();
 
 	/*Return number of elements placed in a given row*/
-	char getRowSize(int rowNum) const;
+	int getRowSize(int rowNum) const;
 
 	/*Memeber variable Getters*/
-	char getNumCols() const;
-	char getNumRows() const;
-	char getNumUnique() const;
-	char getNextUnique();
+	int getNumCols() const;
+	int getNumRows() const;
+	int getNumUnique() const;
+	int getNextUnique();
 
 	/*Get element of the 2D array at (i, j)*/
-	char get(int i, int j) const;
+	int get(int i, int j) const;
 
 	/*Set element of the 2D array at (i, j) to newVal. 
 	It is required that newVal is in the range of 0 and 
 	numCols-1 inclusive. Additionally, to set (i, j), 
 	previous calls must have been made to everything in the set 
 	{(i, j-1), (i,j-2), ..., (i, 0)}*/
-	void set(int i, int j, char newVal);
+	void set(int i, int j, int newVal);
 
 	/*Increase the number rows in the array. 
 	The maximum number of rows must be less than the number of columns however */
@@ -65,31 +65,34 @@ public:
 
 	/*Set all elements in array to -1*/
 	void resetArray();
+	
+	/*pack in elements of the passed row number such that there is no -1 between them and they are pushed leftward*/
+	void pack(int row);
 };
 
-inline char TwoDimArray::getRowSize(int rowNum) const
+inline int TwoDimArray::getRowSize(int rowNum) const
 {
 	return arraySizes[rowNum];
 }
 
-inline char TwoDimArray::getNumCols() const
+inline int TwoDimArray::getNumCols() const
 {
 	return numCols;
 }
 
-inline char TwoDimArray::getNumRows() const
+inline int TwoDimArray::getNumRows() const
 {
 	return numRows;
 }
 
-inline char TwoDimArray::getNumUnique() const
+inline int TwoDimArray::getNumUnique() const
 {
 	return numUnique;
 }
 
-inline char TwoDimArray::getNextUnique() 
+inline int TwoDimArray::getNextUnique() 
 {
-	char nextElem = -2;
+	int nextElem = -2;
 	do 
 	{
 		currUniqueIndex++;
@@ -103,40 +106,12 @@ inline char TwoDimArray::getNextUnique()
 	return nextElem;
 }
 
-inline char TwoDimArray::get(int i, int j) const
+inline int TwoDimArray::get(int i, int j) const
 {
 #ifdef _DEBUG
 	assert(numCols * i + j < numRows * numCols);
 #endif
 	return elems[numCols * i + j];
-}
-
-inline void TwoDimArray::set(int i, int j, char newVal)
-{
-#ifdef _DEBUG
-	assert(numCols * i + j < numRows * numCols);
-	assert(newVal < numCols);
-	assert(currUniqueIndex == -1);
-	assert(j < arraySizes[i] + 1);
-	assert(i < numRows + 1)
-	assert(newVal < numCols);
-#endif
-	if (newVal > -1) {
-		if (uniqueElems[newVal] == -1) {
-			uniqueElems[newVal] = newVal;
-			numUnique++;
-		}
-	}
-
-	if (i == numRows + 1 && arraySizes[i] == 0)   
-	{
-		numRows++;
-	}
-
-	if (arraySizes[i] == j) {
-		arraySizes[i]++;
-	}
-	elems[numCols * i + j] = newVal;
 }
 
 inline void TwoDimArray::addRow() 

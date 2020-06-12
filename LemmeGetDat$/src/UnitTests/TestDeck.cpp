@@ -40,12 +40,12 @@ void testNextCard()
 
 void testRandomCardDist()
 {
-	const unsigned int numTrails = (unsigned int)pow(10, 7);
+	const int numTrails = (int)pow(10, 7);
 	Deck deck(5);
 
-	std::vector<unsigned int> cardDist(NUM_CARDS_IN_DECK, 0);
+	std::vector<int> cardDist(NUM_CARDS_IN_DECK, 0);
 
-	for (unsigned int i = 0; i < numTrails; i++)
+	for (int i = 0; i < numTrails; i++)
 	{
 		Card newCard = deck.getNextPoolCard();
 		cardDist[(int)CardToEnum(newCard)]++;
@@ -57,7 +57,7 @@ void testRandomCardDist()
 
 	std::vector<float> cardPercentDist(52, 0);
 
-	for (unsigned int i = 0; i < NUM_CARDS_IN_DECK; i++) {
+	for (int i = 0; i < NUM_CARDS_IN_DECK; i++) {
 		cardPercentDist[i] = (float)cardDist[i] / (float)numTrails;
 		std::cout << cardPercentDist[i] << " ";
 	}
@@ -65,8 +65,8 @@ void testRandomCardDist()
 
 	float mean = (float)numTrails/(float)NUM_CARDS_IN_DECK;
 	float variance = 0;
-	unsigned int totCheck = 0;
-	for (unsigned int i = 0; i < NUM_CARDS_IN_DECK; i++)
+	int totCheck = 0;
+	for (int i = 0; i < NUM_CARDS_IN_DECK; i++)
 	{
 		totCheck += cardDist[i];
 		variance += pow(cardDist[i] - mean, 2);

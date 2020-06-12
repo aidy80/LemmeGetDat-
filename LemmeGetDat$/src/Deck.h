@@ -19,8 +19,8 @@ class Deck
 {
 private:
 	CardEnum cardsLeft[NUM_CARDS_IN_DECK];
-	unsigned char numCardsLeft;
-	unsigned char numCardsAfterHands;
+	int numCardsLeft;
+	int numCardsAfterHands;
 
 	/*Generator used to grab a random card from those remaining*/
 	Random generator;
@@ -30,10 +30,10 @@ private:
 public:
 	/*Initialize deck and random number generator to either time null or a desired seed*/
 	Deck();
-	Deck(unsigned int initSeed);
+	Deck(uint32_t initSeed);
 
 	/*Change the RNG seed manually*/
-	void changeSeed(int newSeed);
+	void changeSeed(uint32_t newSeed);
 
 	/*Bring all of the cards back into the deck*/
 	void resetEntireDeck();
@@ -51,7 +51,7 @@ public:
 	void printDeck();
 };
 
-inline void Deck::changeSeed(int newSeed) 
+inline void Deck::changeSeed(uint32_t newSeed) 
 {
 	generator.changeSeed(newSeed);
 }

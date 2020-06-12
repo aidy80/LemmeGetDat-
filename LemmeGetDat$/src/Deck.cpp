@@ -1,16 +1,16 @@
 #include "Deck.h"
 
 Deck::Deck() :
-	generator((unsigned int)time(NULL)), numCardsLeft(NUM_CARDS_IN_DECK), 
+	generator((uint32_t)time(NULL)), numCardsLeft(NUM_CARDS_IN_DECK), 
 	cardsLeft{UNSHUFFLED_DECK}, numCardsAfterHands(NUM_CARDS_IN_DECK) {}
 
-Deck::Deck(unsigned int initSeed) :
+Deck::Deck(uint32_t initSeed) :
 	generator(initSeed), numCardsLeft(NUM_CARDS_IN_DECK), 
 	cardsLeft{UNSHUFFLED_DECK}, numCardsAfterHands(NUM_CARDS_IN_DECK) {}
 
 CardEnum Deck::getNextCard()
 {
-	unsigned int randomNum = generator.getRandomNum(numCardsLeft);
+	uint32_t randomNum = generator.getRandomNum(numCardsLeft);
 
 #ifdef _DEBUG
 	assert(numCardsLeft != 0);

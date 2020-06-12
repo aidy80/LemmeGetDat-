@@ -5,13 +5,13 @@
 constexpr int NUM_FLOP_CARDS = 3;
 constexpr int NUM_POOL_CARDS = 5;
 
-constexpr char FLOP1_FLAG = 0x1;
-constexpr char FLOP2_FLAG = 0x2;
-constexpr char FLOP3_FLAG = 0x4;
-constexpr char TURN_FLAG = 0x8;
-constexpr char RIVER_FLAG = 0x10;
+constexpr int FLOP1_FLAG = 0x1;
+constexpr int FLOP2_FLAG = 0x2;
+constexpr int FLOP3_FLAG = 0x4;
+constexpr int TURN_FLAG = 0x8;
+constexpr int RIVER_FLAG = 0x10;
 
-constexpr char POOL_BIT_PACK[5] = { FLOP1_FLAG, FLOP2_FLAG, FLOP3_FLAG, TURN_FLAG, RIVER_FLAG };
+constexpr int POOL_BIT_PACK[5] = { FLOP1_FLAG, FLOP2_FLAG, FLOP3_FLAG, TURN_FLAG, RIVER_FLAG };
 
 /*Representation of a players hand*/
 struct Hand
@@ -51,7 +51,7 @@ struct Hand
 	{
 		//Make sure that resetEntireDeck was called before this
 		cards[0] = deck.getNextHandCard();
-		cards[0] = deck.getNextHandCard();
+		cards[1] = deck.getNextHandCard();
 	}
 };
 
@@ -126,14 +126,19 @@ struct Pool {
 };
 
 /*Print the string representation of the pool*/
-inline void printPool(const Pool& pool) 
+inline void printPool(const Pool& pool, int numCards) 
 {
 	std::cout << "Pool cards: ";
-	for (int i = 0; i < NUM_FLOP_CARDS + 1; i++)
-	{
-		std::cout << getCardsString(pool.cards[i]) << ", ";
+	if (numCards == 0) {
+		std::cout << "Preflop, so none" << std::endl;
 	}
-	std::cout << getCardsString(pool.names.river) << std::endl;
+	else {
+		for (int i = 0; i < numCards - 1; i++)
+		{
+			std::cout << getCardsString(pool.cards[i]) << ", ";
+		}
+		std::cout << getCardsString(pool.cards[numCards - 1]) << std::endl;
+	}
 }
 
 /*Print the string representation for a hand*/

@@ -12,11 +12,11 @@ struct PokerHand
 	bool straightFlush = false;
 	bool flush = false;
 	bool straight = false;
-	char triple = -1;
-	char pair[2] = {-1, -2};
+	int triple = -1;
+	int pair[2] = {-1, -2};
 
-	char kicker1 = -1;
-	char kicker2 = -1;
+	int kicker1 = -1;
+	int kicker2 = -1;
 };
 
 inline void initPokerHand(PokerHand& pokerhand) {
