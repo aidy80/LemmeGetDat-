@@ -30,7 +30,7 @@ public:
 	int getValue(ActionClass action);
 
 	/*Return the number of possible action sequence combos. Must pass in count = 0 for the starting value to get accurate results*/
-	void numActSeq(int& count);
+	void numActSeq(int& count, int depth);
 
 	void updateRegrets(ActionClass action);
 

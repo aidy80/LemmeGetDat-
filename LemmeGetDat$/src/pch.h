@@ -18,3 +18,10 @@
 #include <stdint.h>
 
 #define MULTITHREAD
+
+//TODO: Optimizie TwoDimArray/bestHands for the many row, pairwise comparison case
+//TODO: Figure out pots history
+//TODO: End game when stack for traverser is zero
+//TODO: Figure out how big blind can raise preflop
+//TODO: Eliminate fold option when they can check (call)
+//TODO: Figure out max raises, max potnums

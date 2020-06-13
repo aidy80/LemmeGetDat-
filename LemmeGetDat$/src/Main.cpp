@@ -16,7 +16,7 @@ void countNumActSeq()
 {
 	PokerSim mccfr(NUM_PLAYERS);
 	int count = 0;
-	mccfr.numActSeq(count);
+	mccfr.numActSeq(count, 0);
 	std::cout << "The number of action sequences found was " << count << std::endl;
 }
 

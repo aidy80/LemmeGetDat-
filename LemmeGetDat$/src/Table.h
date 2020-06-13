@@ -74,18 +74,22 @@ private:
 	int currTurn;
 
 	int* stacks;
-	int* preAllInStacks;
 	int* firstToAct;
 	bool* folded;
+	int numFolded;
 
 	int potNum;
-	int* pot;
+	int* pots;
 
 	int raiseNum;
 	int* raiser; 
 	int* currHighBet; 
 
-	Pot pot;
+	int raiseRaise;
+	int checkRaise;
+	int newTurnRaise;
+
+	//Pot pot;
 
 	Deck deck;
 	Pool pool;
@@ -162,13 +166,16 @@ public:
 	/*Going in forward recursion, gives user ability to progress game state by making a given player act. Does NOT return the value of the action*/
 	int processAction(const ActionClass act);
 	
-	/*Made for back tracking recursion, gives user ability to undo an action 
+	/*Made for back tracking recursion, gives user ability to undo an action. unlike processAction, this specifically requires the player in question
 	(ideally that they did last altho there is no check)*/
-	void unProcessAction(const ActionClass act);
+	void unProcessAction(const ActionClass act, const int player);
 
-	/*Given a list of actions with the largest being the largest (possibly illegal) raise size, 
+	/*With the list of actionClasses with the largest being the largest (possibly illegal) raise size, 
 	  return the index of the last element which is illegal */
 	int firstIllegalAction();
+
+	/*With the list of actionclasses, return the first action u can do. Realistically, this just prevents someone from folding when they can just call */
+	int firstLegalAction();
 
 	int getUTG() const;
 	int getCurrTurn() const;
@@ -199,118 +206,3 @@ inline int Table::numCardsInPhase(Phase phase)
 	return -1;
 }
 
-inline int Table::checkPlayerOverflow(int playerIndex) const
-{
-	return playerIndex == numPlayers ? 0 : playerIndex;
-}
-
-inline int Table::checkPlayerUnderflow(int playerIndex) const
-{
-	return playerIndex < 0 ? numPlayers - 1 : playerIndex;
-}
-
-inline int Table::getStacksIndex(Phase phase, int player) const
-{
-	return numPlayers * (int)phase + player;
-}
-
-inline int Table::nextUnfoldedPlayer()
-{
-#ifdef _DEBUG
-	bool allFolded = true;
-	for (int i = 0; i < numPlayers; i++) 
-	{
-		if (!pot.folded[i])
-		{
-			allFolded = false;
-			break;
-		}
-	}
-	assert(!allFolded);
-#endif
-	int nextUnfolded = currTurn;
-	do 
-	{
-		nextUnfolded = checkPlayerOverflow(++nextUnfolded);
-	} while (pot.folded[nextUnfolded]);
-	return nextUnfolded;
-}
-
-inline int Table::prevUnfoldedPlayer()
-{
-#ifdef _DEBUG
-	bool allFolded = true;
-	for (int i = 0; i < numPlayers; i++) 
-	{
-		if (!pot.folded[i])
-		{
-			allFolded = false;
-			break;
-		}
-	}
-	assert(!allFolded);
-#endif
-	int prevUnfolded = currTurn;
-	do 
-	{
-		prevUnfolded = checkPlayerUnderflow(--prevUnfolded);
-	} while (pot.folded[prevUnfolded]);
-	return prevUnfolded;
-}
-
-inline int Table::getSmallBlind() const 
-{
-	return (dealer == numPlayers - 1) ? 0 : dealer + 1;
-}
-
-inline int Table::getUTG() const 
-{
-	return dealer - 3 > -1 ? dealer - 3 : dealer + 3;
-}
-
-inline int Table::getCurrTurn() const
-{
-	return currTurn;
-}
-
-inline bool Table::leftToAct() 
-{
-	if (phase == Phase::RIVER && nextUnfoldedPlayer() == raiser[raiseNum]) 
-	{
-			return false;
-	}
-	return true;
-}
-
-inline int Table::winValue()
-{
-	return stacks[TRAVERSER] - START_STACK + pot.amount;
-}
-
-inline int Table::tieValue(int numTies) 
-{
-	int potValue;
-	if (numTies == 2) 
-	{
-		potValue = pot.amount >> 1;
-	}
-	else {
-		potValue = pot.amount / numTies;
-	}
-	return stacks[TRAVERSER] - START_STACK + potValue;
-}
-
-inline int Table::lossValue()
-{
-	return stacks[TRAVERSER] - START_STACK;
-}
-
-inline int Table::raiseHalfSize()
-{
-	return 2 * currHighBet[(int)phase] + (pot.amount >> 1);
-}
-
-inline int Table::raisePotSize()
-{
-	return 2 * currHighBet[(int)phase] + pot.amount;
-}

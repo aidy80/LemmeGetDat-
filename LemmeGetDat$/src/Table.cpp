@@ -6,17 +6,22 @@ Table::Table(int numPlayers) :
 	currTurn(0),
 	dealer(-1),
 	stacks(new int[numPlayers]),
-	preAllInStacks(new int[numPlayers]),
+	folded(new bool[numPlayers]),
+	numFolded(0),
 	firstToAct(new int[(int)Phase::Count]),
 	raiseNum(0),
-	raiser(new int[5 * (int)Phase::Count]), //Fix later to be optimal
-	currHighBet(new int[5 * (int)Phase::Count]), //fix later to be optimal
-	pot(numPlayers),
+	raiser(new int[200 * (int)Phase::Count]), //Fix later to be optimal
+	currHighBet(new int[200 * (int)Phase::Count]), //fix later to be optimal
+	pots(new int[500 * (int)Phase::Count]), //Fix later to be optimal
 	pool(), deck(), 
 	winners(1, numPlayers),
 	phase(Phase::PREFLOP)
 {
 	startNewGame();
+
+	raiseRaise = 0;
+	checkRaise = 0;
+	newTurnRaise = 0;
 }
 
 void Table::startNewGame() 
@@ -30,7 +35,9 @@ void Table::startNewGame()
 	{
 		hands[i].newHand(deck);
 		stacks[i] = Table::START_STACK;
+		folded[i] = false;
 	}
+	numFolded = 0;
 
 	int smallBlind = getSmallBlind();
 	int bigBlind = checkPlayerOverflow(smallBlind + 1);
@@ -40,14 +47,14 @@ void Table::startNewGame()
 	raiseNum = 0;
 	currHighBet[raiseNum] = BIG_BLIND;
 	raiser[raiseNum] = bigBlind;
+	potNum = 0;
+	pots[potNum] = SMALL_BLIND + BIG_BLIND;
 
 	firstToAct[0] = currTurn;
-	pot.reset(numPlayers);
 #ifdef _DEBUG
 	for (int i = 1; i < (int)phase; i++) {
 		firstToAct[i] = -1;
 	}
-	assert(pot.amount == SMALL_BLIND + BIG_BLIND);
 	assert(TRAVERSER == 0);
 #endif
 	pool.newPool(deck);
@@ -78,7 +85,7 @@ int Table::showdownValue()
 	int numTie = 0;
 	for (int i = TRAVERSER + 1; i < numPlayers; i++)
 	{
-		if (!pot.folded[i]) 
+		if (!folded[i]) 
 		{
 			if (winners.get(i - 1, 0) == TRAVERSER) 
 			{
@@ -105,58 +112,39 @@ int Table::nextTurn()
 {
 	currTurn = nextUnfoldedPlayer();
 
-	if (currTurn == raiser[(int)phase]) 
+
+	if (currTurn == raiser[raiseNum]) 
 	{
-		if (pot.numFolded == numPlayers - 1) 
+		if (numFolded == numPlayers - 1) 
 		{
 			return winValue();
+		} else if (phase == Phase::RIVER || stacks[raiser[raiseNum]] == 0) 
+		{
+			return showdownValue();
 		}
 		
-		switch(phase)
-		{
-		case Phase::PREFLOP:
-			phase = Phase::FLOP;
-			break;
-		case Phase::FLOP:
-			phase = Phase::TURN;
-			break;
-		case Phase::TURN:
-			phase = Phase::RIVER;
-			break;
-		case Phase::RIVER:
-			return showdownValue();
-			break;
-		} 
+		phase = (Phase)((int)(phase) + 1);
 		currTurn = calcFirstToAct();
 		firstToAct[(int)phase] = currTurn;
 
 		raiseNum++;
 		raiser[raiseNum] = currTurn;
-		currHighBet[raiseNum] = 0;
+		newTurnRaise++;
+		currHighBet[raiseNum] = -1;
 	}
 	return NOT_FINISHED;
 }
 
 void Table::prevTurn() 
 {
-	if (currTurn == firstToAct[(int)phase] && currHighBet[(int)phase] == 0)
+	if (currHighBet[raiseNum] == -1)
 	{
-		switch (phase) 
-		{
-		case Phase::RIVER:
-			phase = Phase::TURN;
-			break;
-		case Phase::TURN:
-			phase = Phase::FLOP;
-			break;
-		case Phase::FLOP:
-			phase = Phase::PREFLOP;
-			break;
-		case Phase::PREFLOP:
-			startNewGame();
-			return;
-		}
+		phase = (Phase)((int)(phase) - 1);
+#ifdef _DEBUG
+		assert((int)(phase) != -1);
+#endif
 		raiseNum--;
+		newTurnRaise--;
 		currTurn = raiser[raiseNum];
 	}
 
@@ -165,10 +153,17 @@ void Table::prevTurn()
 
 inline void Table::raise(int player, int raiseSize) 
 {
-	pot.amount += raiseSize;
+#ifdef _DEBUG
+	assert(raiseSize >= 0);
+	assert(! (phase != Phase::PREFLOP && 
+			  stacks[currTurn] - raiseSize > START_STACK - BIG_BLIND));
+#endif
+	potNum++;
+	pots[potNum] = pots[potNum - 1] + raiseSize;
 	stacks[player] -= raiseSize;
 
 	raiseNum++;
+	raiseRaise++;
 	raiser[raiseNum] = player;
 	currHighBet[raiseNum] = raiseSize;
 }
@@ -176,21 +171,43 @@ inline void Table::raise(int player, int raiseSize)
 /*Processes every legal possible action except fold for the current turn then increments to the next turn*/
 int Table::processAction(const ActionClass act) 
 { 
+	if (currTurn == 1) 
+	{
+		std::cout << "HERE\n";
+	}
+	
 	switch (act)
 	{
 	case ActionClass::FOLD:
+		folded[currTurn] = true;
+		numFolded++;
+
 		if (currTurn == TRAVERSER) {
+			currTurn = nextUnfoldedPlayer();
 			return stacks[TRAVERSER] - START_STACK;
+		} else if (numFolded == numPlayers - 1) 
+		{
+			return winValue();
 		}
-		pot.folded[currTurn] = true;
-		pot.numFolded++;
 		break;
 	case ActionClass::CALL:
-		pot.amount += stacks[currTurn] - stacks[raiser[raiseNum]];
+		if (currHighBet[raiseNum] == -1) 
+		{
+			raiseNum++;
+			checkRaise++;
+			raiser[raiseNum] = currTurn;
+			currHighBet[raiseNum] = 0;
+		}
+
+		potNum++;
+		pots[potNum] = stacks[currTurn] - stacks[raiser[raiseNum]] + pots[potNum - 1];
 		stacks[currTurn] = stacks[raiser[raiseNum]];
+
+		#ifdef _DEBUG
+			assert(stacks[currTurn] <= START_STACK - BIG_BLIND);
+		#endif
 		break;
 	case ActionClass::ALL_IN:
-		preAllInStacks[currTurn] = stacks[currTurn];
 		raise(currTurn, stacks[currTurn]);
 		break;
 	case ActionClass::RAISE_HALF:
@@ -200,56 +217,72 @@ int Table::processAction(const ActionClass act)
 		raise(currTurn, raisePotSize());
 		break;
 	}
-	nextTurn();
-	return NOT_FINISHED;
+#ifdef _DEBUG
+	for (int i = 0; i < numPlayers; i++) 
+	{
+		assert(stacks[i] > -1);
+	}
+#endif
+
+	return nextTurn();
 }
 
 inline void Table::unRaise(int player) 
 {
-	int newRaiseNum = raiseNum - 1;
-	int raiseSize = currHighBet[raiseNum] - currHighBet[newRaiseNum];
-	pot.amount -= raiseSize;
-	stacks[player] += raiseSize;
-
-	raiseNum = newRaiseNum;
+#ifdef _DEBUG
+	assert(! (phase != Phase::PREFLOP && 
+			  stacks[currTurn] + pots[potNum] - pots[potNum - 1] > START_STACK - BIG_BLIND));
+#endif
+	stacks[player] += pots[potNum] - pots[potNum - 1];
+	raiseNum--;
+	raiseRaise--;
+	potNum--;
 }
 
-void Table::unProcessAction(const ActionClass act)
+void Table::unProcessAction(const ActionClass act, const int player)
 {
 	switch (act)
 	{
 	case ActionClass::FOLD:
-		if (currTurn == TRAVERSER) 
-		{
-			return;
-		}
-		pot.folded[currTurn] = false;
-		pot.numFolded--;
+		folded[player] = false;
+		numFolded--;
+		currTurn = player;
 		break;
 	case ActionClass::CALL:
-		stacks[currTurn] += currHighBet[(int)phase];
-		pot.amount -= currHighBet[(int)phase];
+		prevTurn();
+
+		#ifdef _DEBUG
+			assert(player == currTurn);
+		#endif
+
+		if (firstToAct[(int)phase] == currTurn && currHighBet[raiseNum - 1] == -1)
+		{
+			raiseNum--;
+			checkRaise--;
+		}
+
+		#ifdef _DEBUG
+			assert(! (phase != Phase::PREFLOP && stacks[currTurn] + pots[potNum] - pots[potNum - 1] > START_STACK - BIG_BLIND));
+		#endif
+
+		stacks[currTurn] += pots[potNum] - pots[potNum - 1];
+		potNum--;
+
+
 		break;
-	case ActionClass::ALL_IN:
-		pot.amount -= preAllInStacks[currTurn];
-		stacks[currTurn] = preAllInStacks[currTurn];
-		raiseNum--;
-		break;
-	case ActionClass::RAISE_HALF:
-		unRaise(currTurn);
-		break;
-	case ActionClass::RAISE_POT:
+	default: 
+		prevTurn();
+
 		unRaise(currTurn);
 		break;
 	}
-	prevTurn();
 }
 
 int Table::calcFirstToAct()
 {
 	for (int i = dealer + 1; i < numPlayers; i++)
 	{
-		if (!pot.folded[i])
+		if (!folded[i])
 		{
 			return i;
 		}
@@ -257,7 +290,7 @@ int Table::calcFirstToAct()
 
 	for (int i = 0; i < dealer + 1; i++)
 	{
-		if (!pot.folded[i]) 
+		if (!folded[i]) 
 		{
 			return i;
 		}
@@ -265,10 +298,26 @@ int Table::calcFirstToAct()
 	return -1;
 }
 
+int Table::firstLegalAction()
+{
+	if (currHighBet[raiseNum] == 0 || currHighBet[raiseNum] == -1) 
+	{
+		return 1;
+	} else 
+	{
+		return 0;
+	}
+}
 
 int Table::firstIllegalAction()
 {
-	if (raiseHalfSize() > stacks[currTurn])
+	return (int)ActionClass::ALL_IN;
+	/*
+	if (stacks[currTurn] <= currHighBet[raiseNum]) 
+	{
+		return (int)ActionClass::ALL_IN;
+	} 
+	else if (raiseHalfSize() > stacks[currTurn])
 	{
 		return (int)ActionClass::RAISE_HALF;
 	}
@@ -279,6 +328,7 @@ int Table::firstIllegalAction()
 	else {
 		return (int)ActionClass::NUM_ACTIONS;
 	}
+	*/
 }
 
 void Table::printTurn() 
@@ -317,19 +367,32 @@ void Table::printMoney()
 	std::cout << "Stack sizes are: ";
 	for (int i = 0; i < numPlayers; i++)
 	{
-	std::cout << stacks[i] << ", ";
+		std::cout << stacks[i] << ", ";
 	}
 	std::cout << "\n";
-	std::cout << "The pot is " << pot.amount << " with players ";
+	std::cout << "The pot is " << pots[potNum] << " with " << numPlayers - numFolded << " players still in: ";
+	int stillIn = 0;
 	for (int i = 0; i < numPlayers; i++)
 	{
-	if (!pot.folded[i]) {
-	std::cout << i << ", ";
+		if (!folded[i]) {
+			std::cout << i;
+
+			stillIn++;
+			if (stillIn != numPlayers - numFolded) 
+			{
+				std::cout << ", ";
+			} else 
+			{
+				std::cout << std::endl;
+			}
+		}
 	}
-	}
-	std::cout << "still in" << std::endl;
+#ifdef _DEBUG
+	//assert(stillIn == numPlayers - numFolded);
+#endif
 	
 	std::cout << "Current raiser is player " << raiser[raiseNum] << " with a bet of " << currHighBet[raiseNum] << "\n";
+	std::cout << "raiseRaise: " << raiseRaise << ". checkRaise " << checkRaise << ". newTurnRaise: " << newTurnRaise << ". numRaise: " << raiseNum << " potNum: " << potNum << "." << std::endl;
 }
 
 void Table::printTable() 
@@ -338,4 +401,129 @@ void Table::printTable()
 	printTurn();
 	printMoney();
 	std::cout << std::endl;
+}
+
+int Table::checkPlayerOverflow(int playerIndex) const
+{
+	return playerIndex == numPlayers ? 0 : playerIndex;
+}
+
+int Table::checkPlayerUnderflow(int playerIndex) const
+{
+	return playerIndex < 0 ? numPlayers - 1 : playerIndex;
+}
+
+int Table::getStacksIndex(Phase phase, int player) const
+{
+	return numPlayers * (int)phase + player;
+}
+
+int Table::nextUnfoldedPlayer()
+{
+#ifdef _DEBUG
+	bool allFolded = true;
+	for (int i = 0; i < numPlayers; i++) 
+	{
+		if (!folded[i])
+		{
+			allFolded = false;
+			break;
+		}
+	}
+	assert(!allFolded);
+#endif
+	int nextUnfolded = currTurn;
+	do 
+	{
+		nextUnfolded = checkPlayerOverflow(++nextUnfolded);
+	} while (folded[nextUnfolded]);
+	return nextUnfolded;
+}
+
+int Table::prevUnfoldedPlayer()
+{
+#ifdef _DEBUG
+	bool allFolded = true;
+	for (int i = 0; i < numPlayers; i++) 
+	{
+		if (!folded[i])
+		{
+			allFolded = false;
+			break;
+		}
+	}
+	assert(!allFolded);
+#endif
+	int prevUnfolded = currTurn;
+	do 
+	{
+		prevUnfolded = checkPlayerUnderflow(--prevUnfolded);
+	} while (folded[prevUnfolded]);
+	return prevUnfolded;
+}
+
+int Table::getSmallBlind() const 
+{
+	return (dealer == numPlayers - 1) ? 0 : dealer + 1;
+}
+
+int Table::getUTG() const 
+{
+	return dealer - 3 > -1 ? dealer - 3 : dealer + 3;
+}
+
+int Table::getCurrTurn() const
+{
+	return currTurn;
+}
+
+bool Table::leftToAct() 
+{
+	if (phase == Phase::RIVER && nextUnfoldedPlayer() == raiser[raiseNum]) 
+	{
+			return false;
+	}
+	return true;
+}
+
+int Table::winValue()
+{
+	return stacks[TRAVERSER] - START_STACK + pots[potNum];
+}
+
+int Table::tieValue(int numTies) 
+{
+	int potValue;
+	if (numTies == 2) 
+	{
+		potValue = pots[potNum] >> 1;
+	}
+	else {
+		potValue = pots[potNum] / numTies;
+	}
+	return stacks[TRAVERSER] - START_STACK + potValue;
+}
+
+/*To be inlined*/
+int Table::lossValue()
+{
+	return stacks[TRAVERSER] - START_STACK;
+}
+
+int Table::raiseHalfSize()
+{
+	if (currHighBet[raiseNum] == -1) 
+	{
+		return pots[potNum] >> 1;
+	}
+	return 2 * currHighBet[raiseNum] + (pots[potNum] / 2);
+}
+
+int Table::raisePotSize()
+{
+	if (currHighBet[raiseNum] == -1) 
+	{
+		return pots[potNum];
+	}
+	return 2 * currHighBet[raiseNum] + pots[potNum];
 }
