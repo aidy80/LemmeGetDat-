@@ -5,7 +5,7 @@ Table::Table(int numPlayers) :
 	hands(new Hand[numPlayers]),
 	currTurn(0),
 	dealer(-1),
-	stacks(new int[numPlayers]),
+	stacks(new int[numPlayers + 1]),
 	folded(new bool[numPlayers]),
 	numFolded(0),
 	firstToAct(new int[(int)Phase::Count]),
@@ -43,10 +43,11 @@ void Table::startNewGame()
 	int bigBlind = checkPlayerOverflow(smallBlind + 1);
 	stacks[smallBlind] -= SMALL_BLIND;
 	stacks[bigBlind] -= BIG_BLIND;
+	stacks[numPlayers] = START_STACK - BIG_BLIND;
 
 	raiseNum = 0;
 	currHighBet[raiseNum] = BIG_BLIND;
-	raiser[raiseNum] = bigBlind;
+	raiser[raiseNum] = numPlayers;
 	potNum = 0;
 	pots[potNum] = SMALL_BLIND + BIG_BLIND;
 
@@ -112,7 +113,6 @@ int Table::nextTurn()
 {
 	currTurn = nextUnfoldedPlayer();
 
-
 	if (currTurn == raiser[raiseNum]) 
 	{
 		if (numFolded == numPlayers - 1) 
@@ -171,11 +171,6 @@ inline void Table::raise(int player, int raiseSize)
 /*Processes every legal possible action except fold for the current turn then increments to the next turn*/
 int Table::processAction(const ActionClass act) 
 { 
-	if (currTurn == 1) 
-	{
-		std::cout << "HERE\n";
-	}
-	
 	switch (act)
 	{
 	case ActionClass::FOLD:
@@ -202,6 +197,12 @@ int Table::processAction(const ActionClass act)
 		potNum++;
 		pots[potNum] = stacks[currTurn] - stacks[raiser[raiseNum]] + pots[potNum - 1];
 		stacks[currTurn] = stacks[raiser[raiseNum]];
+
+		if (phase == Phase::PREFLOP && raiseNum == 0)  
+		{
+			raiseNum++;
+			raiser[raiseNum] = currTurn;
+		}
 
 		#ifdef _DEBUG
 			assert(stacks[currTurn] <= START_STACK - BIG_BLIND);
@@ -252,6 +253,10 @@ void Table::unProcessAction(const ActionClass act, const int player)
 		prevTurn();
 
 		#ifdef _DEBUG
+		if (player != currTurn) 
+		{
+			std::cout << "HERE\n";
+		}
 			assert(player == currTurn);
 		#endif
 
@@ -311,24 +316,31 @@ int Table::firstLegalAction()
 
 int Table::firstIllegalAction()
 {
-	return (int)ActionClass::ALL_IN;
-	/*
 	if (stacks[currTurn] <= currHighBet[raiseNum]) 
 	{
 		return (int)ActionClass::ALL_IN;
 	} 
-	else if (raiseHalfSize() > stacks[currTurn])
+	else if (phase == Phase::PREFLOP) 
 	{
 		return (int)ActionClass::RAISE_HALF;
 	}
-	else if (raisePotSize() > stacks[currTurn]) 
-	{
-		return (int)ActionClass::RAISE_POT;
-	}
 	else {
-		return (int)ActionClass::NUM_ACTIONS;
+		if (stacks[currTurn] <= currHighBet[raiseNum])
+		{
+			return (int)ActionClass::ALL_IN;
+		}
+		else if (raiseHalfSize() > stacks[currTurn])
+		{
+			return (int)ActionClass::RAISE_HALF;
+		}
+		else if (raisePotSize() > stacks[currTurn])
+		{
+			return (int)ActionClass::RAISE_POT;
+		}
+		else {
+			return (int)ActionClass::NUM_ACTIONS;
+		}
 	}
-	*/
 }
 
 void Table::printTurn() 

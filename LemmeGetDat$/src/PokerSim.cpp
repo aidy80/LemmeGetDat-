@@ -27,23 +27,28 @@ void PokerSim::numActSeq(int& count, int depth)
 
 	for (int i = table.firstLegalAction(); i < table.firstIllegalAction(); i++)
 	{
-		std::cout << "Player " << table.getCurrTurn() << " ";
-		printAction((ActionClass)i);
+		//std::cout << "Player " << table.getCurrTurn() << " ";
+		//printAction((ActionClass)i);
 		int value = table.processAction((ActionClass)i);
-		table.printTable();
+		//table.printTable();
 
 		if (value == NOT_FINISHED) {
 			numActSeq(count, depth + 1);
 		} else {
 			count++;
-			std::cout << "The traverser recieved " << value << " blinds" << std::endl;
-			std::cout << "CURR COUNT " << count << "\n" << std::endl;
+			//std::cout << "The traverser recieved " << value << " blinds" << std::endl;
+			//std::cout << "CURR COUNT " << count << "\n" << std::endl;
 		}
 
-		std::cout << "Player " << player << " reverse ";
-		printAction((ActionClass)i);
+		if (count == 22171 && depth == 13 && i == 1)  
+		{
+			std::cout << "HERE\n";
+		}
+
+		//std::cout << "Player " << player << " reverse ";
+		//printAction((ActionClass)i);
 		table.unProcessAction((ActionClass)i, player);
-		table.printTable();
+		//table.printTable();
 	}
 }
 
