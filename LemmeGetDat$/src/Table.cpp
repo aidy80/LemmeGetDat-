@@ -135,6 +135,20 @@ int Table::nextTurn()
 	return NOT_FINISHED;
 }
 
+void Table::testPrevPhase() 
+{
+	if (currHighBet[raiseNum] == -1)
+	{
+		phase = (Phase)((int)(phase) - 1);
+#ifdef _DEBUG
+		assert((int)(phase) != -1);
+#endif
+		raiseNum--;
+		newTurnRaise--;
+		currTurn = raiser[raiseNum];
+	}
+}
+
 void Table::prevTurn() 
 {
 	if (currHighBet[raiseNum] == -1)
@@ -171,6 +185,9 @@ inline void Table::raise(int player, int raiseSize)
 /*Processes every legal possible action except fold for the current turn then increments to the next turn*/
 int Table::processAction(const ActionClass act) 
 { 
+#ifdef _DEBUG
+	assert(raiseNum == raiseRaise + checkRaise + newTurnRaise);
+#endif
 	switch (act)
 	{
 	case ActionClass::FOLD:
@@ -201,6 +218,7 @@ int Table::processAction(const ActionClass act)
 		if (phase == Phase::PREFLOP && raiseNum == 0)  
 		{
 			raiseNum++;
+			checkRaise++;
 			raiser[raiseNum] = currTurn;
 		}
 
@@ -219,10 +237,10 @@ int Table::processAction(const ActionClass act)
 		break;
 	}
 #ifdef _DEBUG
-	for (int i = 0; i < numPlayers; i++) 
-	{
-		assert(stacks[i] > -1);
-	}
+	//for (int i = 0; i < numPlayers; i++) 
+	//{
+	//	assert(stacks[i] > -1);
+	//}
 #endif
 
 	return nextTurn();
@@ -242,21 +260,22 @@ inline void Table::unRaise(int player)
 
 void Table::unProcessAction(const ActionClass act, const int player)
 {
+#ifdef _DEBUG
+	assert(raiseNum == raiseRaise + checkRaise + newTurnRaise);
+#endif
 	switch (act)
 	{
 	case ActionClass::FOLD:
+		testPrevPhase();
 		folded[player] = false;
 		numFolded--;
 		currTurn = player;
 		break;
 	case ActionClass::CALL:
-		prevTurn();
+		testPrevPhase();
+		currTurn = prevUnfoldedPlayer();
 
 		#ifdef _DEBUG
-		if (player != currTurn) 
-		{
-			std::cout << "HERE\n";
-		}
 			assert(player == currTurn);
 		#endif
 
@@ -273,10 +292,17 @@ void Table::unProcessAction(const ActionClass act, const int player)
 		stacks[currTurn] += pots[potNum] - pots[potNum - 1];
 		potNum--;
 
+		if (phase == Phase::PREFLOP && raiseNum == 1 && raiser[raiseNum] == currTurn)  
+		{
+			raiseNum--;
+			checkRaise--;
+			raiser[raiseNum] = numPlayers;
+		}
 
 		break;
 	default: 
-		prevTurn();
+		testPrevPhase();
+		currTurn = prevUnfoldedPlayer();
 
 		unRaise(currTurn);
 		break;
@@ -409,7 +435,7 @@ void Table::printMoney()
 
 void Table::printTable() 
 {
-	printCards();
+	//printCards();
 	printTurn();
 	printMoney();
 	std::cout << std::endl;
@@ -487,6 +513,21 @@ int Table::getUTG() const
 int Table::getCurrTurn() const
 {
 	return currTurn;
+}
+
+Phase Table::getPhase() const
+{
+	return phase;
+}
+
+int Table::getNumFolded() const
+{
+	return numFolded;
+}
+
+int Table::getFolded(int i) const
+{
+	return folded[i];
 }
 
 bool Table::leftToAct() 

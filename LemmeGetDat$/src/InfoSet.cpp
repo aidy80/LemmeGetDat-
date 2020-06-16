@@ -25,12 +25,12 @@ InfoSet::~InfoSet()
 {
 	for (int i = 0; i < MAX_ID; i++)
 	{
-		if (regrets[i])
+		if (regrets[i] != nullptr)
 		{
-			delete regrets[i];
+			delete[] regrets[i];
 		}
-		delete []regrets;
 	}
+	delete []regrets;
 }
 
 Regret* InfoSet::getRegrets(const Table& table, const ActionClass* actSeq, int numActions)
@@ -39,10 +39,10 @@ Regret* InfoSet::getRegrets(const Table& table, const ActionClass* actSeq, int n
 
 	if (regrets[id] == nullptr) {
 		int newListSize = (int)ActionClass::NUM_ACTIONS;
-		regrets[0] = new Regret[newListSize];
+		regrets[id] = new Regret[newListSize];
 		for (int i = 0; i < newListSize; i++)
 		{
-			regrets[0][i] = 0;
+			regrets[id][i] = 0;
 		}
 	}
 

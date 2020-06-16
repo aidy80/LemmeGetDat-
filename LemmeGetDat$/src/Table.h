@@ -152,6 +152,8 @@ private:
 
 	int raisePotSize();
 
+	void testPrevPhase();
+
 	friend int InfoSet::getInfoId(const Table& table) const;
 public:
 	Table(int numPlayers);
@@ -179,6 +181,9 @@ public:
 
 	int getUTG() const;
 	int getCurrTurn() const;
+	int getNumFolded() const;
+	int getFolded(int i) const;
+	Phase getPhase() const;
 
 	/*Print the information in the table. Used for testing*/
 	void printCards();
