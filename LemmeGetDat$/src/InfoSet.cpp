@@ -38,7 +38,7 @@ Regret* InfoSet::getRegrets(const Table& table, const ActionClass* actSeq, int n
 	int id = getInfoId(table) + getActionSeqId(actSeq, numActions) * MAX_INFO_ID;
 
 	if (regrets[id] == nullptr) {
-		int newListSize = (int)ActionClass::NUM_ACTIONS;
+		int newListSize = (int)ActionClass::NUM_ACTIONS_POST_FLOP;
 		regrets[id] = new Regret[newListSize];
 		for (int i = 0; i < newListSize; i++)
 		{
@@ -67,6 +67,15 @@ void printAction(ActionClass action)
 		break;
 	case ActionClass::RAISE_POT:
 		std::cout << "raises pot";
+		break;
+	case ActionClass::OPEN:
+		std::cout << "open raises";
+		break;
+	case ActionClass::BET3:
+		std::cout << "3 bets";
+		break;
+	case ActionClass::BET4:
+		std::cout << "4 bets";
 		break;
 	default:
 		std::cout << "Other action: " << (int)action;

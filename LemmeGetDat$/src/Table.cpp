@@ -14,7 +14,7 @@ Table::Table(int numPlayers) :
 	currHighBet(new int[200 * (int)Phase::Count]), //fix later to be optimal
 	pots(new int[500 * (int)Phase::Count]), //Fix later to be optimal
 	pool(), deck(), 
-	winners(1, numPlayers),
+	winners(numPlayers*numPlayers, numPlayers),
 	phase(Phase::PREFLOP)
 {
 	startNewGame();
@@ -56,15 +56,18 @@ void Table::startNewGame()
 	for (int i = 1; i < (int)phase; i++) {
 		firstToAct[i] = -1;
 	}
-	assert(TRAVERSER == 0);
 #endif
 	pool.newPool(deck);
 	phase = Phase::PREFLOP;
 
 	winners.resetArray();
-	for (int i = 0; i < numPlayers - 1; i++) {
-		winners.set(i, 0, TRAVERSER);
-		winners.set(i, 1, i + 1);
+	int currRow = 0;
+	for (int i = 0; i < numPlayers; i++) {
+		for (int j = 0; j < numPlayers; j++) {
+			winners.set(currRow, 0, i);
+			winners.set(currRow, 1, j);
+			currRow++;
+		}
 	}
 	getBestHands(pool, hands, winners);
 }
@@ -80,33 +83,7 @@ Table::~Table()
 
 int Table::showdownValue() 
 {
-#ifdef _DEBUG
-	assert(TRAVERSER == 0);
-#endif
-	int numTie = 0;
-	for (int i = TRAVERSER + 1; i < numPlayers; i++)
-	{
-		if (!folded[i]) 
-		{
-			if (winners.get(i - 1, 0) == TRAVERSER) 
-			{
-				if (winners.get(i - 1, 1) != -1) 
-				{
-					numTie += 1;
-				}
-			} else 
-			{
-				return lossValue();
-			}
-		}
-	}
-
-	if (numTie != 0) 
-	{
-		return tieValue(numTie);
-	}
-
-	return winValue();
+	return winValue(0);
 }
 
 int Table::nextTurn() 
@@ -115,10 +92,7 @@ int Table::nextTurn()
 
 	if (currTurn == raiser[raiseNum]) 
 	{
-		if (numFolded == numPlayers - 1) 
-		{
-			return winValue();
-		} else if (phase == Phase::RIVER || stacks[raiser[raiseNum]] == 0) 
+		if (phase == Phase::RIVER || stacks[raiser[raiseNum]] == 0) 
 		{
 			return showdownValue();
 		}
@@ -194,12 +168,13 @@ int Table::processAction(const ActionClass act)
 		folded[currTurn] = true;
 		numFolded++;
 
-		if (currTurn == TRAVERSER) {
-			currTurn = nextUnfoldedPlayer();
-			return stacks[TRAVERSER] - START_STACK;
-		} else if (numFolded == numPlayers - 1) 
+		if (numFolded == numPlayers - 1) 
 		{
-			return winValue();
+			for (int i = 0; i < numPlayers; i++) {
+				if (!folded[i]) {
+					return winValue(i);
+				}
+			}
 		}
 		break;
 	case ActionClass::CALL:
@@ -220,6 +195,7 @@ int Table::processAction(const ActionClass act)
 			raiseNum++;
 			checkRaise++;
 			raiser[raiseNum] = currTurn;
+			currHighBet[raiseNum] = BIG_BLIND;
 		}
 
 		#ifdef _DEBUG
@@ -229,18 +205,33 @@ int Table::processAction(const ActionClass act)
 	case ActionClass::ALL_IN:
 		raise(currTurn, stacks[currTurn]);
 		break;
+	case ActionClass::RAISE_QUARTER:
+		raise(currTurn, raiseQurtSize());
+		break;
 	case ActionClass::RAISE_HALF:
 		raise(currTurn, raiseHalfSize());
+		break;
+	case ActionClass::RAISE_THREE_QUARTERS:
+		raise(currTurn, raiseThrQurtSize());
 		break;
 	case ActionClass::RAISE_POT:
 		raise(currTurn, raisePotSize());
 		break;
+	case ActionClass::OPEN:
+		raise(currTurn, OPEN_SIZE);
+		break;
+	case ActionClass::BET3:
+		raise(currTurn, BET3_SIZE);
+		break;
+	case ActionClass::BET4:
+		raise(currTurn, BET4_SIZE);
+		break;
 	}
 #ifdef _DEBUG
-	//for (int i = 0; i < numPlayers; i++) 
-	//{
-	//	assert(stacks[i] > -1);
-	//}
+	for (int i = 0; i < numPlayers; i++) 
+	{
+		assert(stacks[i] > -1);
+	}
 #endif
 
 	return nextTurn();
@@ -329,44 +320,96 @@ int Table::calcFirstToAct()
 	return -1;
 }
 
-int Table::firstLegalAction()
+int Table::numRaisesThisPhase() 
 {
-	if (currHighBet[raiseNum] == 0 || currHighBet[raiseNum] == -1) 
+	int numRTP = 0;
+	int raiseIter = raiseNum;
+#ifdef _DEBUG
+	int numIt = 0;
+	while (currHighBet[raiseIter] != -1) 
 	{
-		return 1;
-	} else 
-	{
-		return 0;
+		numRTP++;
+		raiseIter--;
+		assert(numIt < numPlayers + 1);
+		numIt++;
 	}
+#else
+	while (currHighBet[raiseIter] != -1) 
+	{
+		numRTP++;
+		raiseIter--;
+	}
+#endif
+	return numRTP;
 }
 
-int Table::firstIllegalAction()
+inline void addAction(ActionClass* acts, int& numElems, ActionClass newAct) 
 {
-	if (stacks[currTurn] <= currHighBet[raiseNum]) 
+	acts[numElems] = newAct;
+	numElems++;
+}
+
+ActionClass* Table::getLegalActions() 
+{
+	ActionClass* acts;
+	int numElems = 0;
+	if (phase == Phase::PREFLOP)
 	{
-		return (int)ActionClass::ALL_IN;
-	} 
-	else if (phase == Phase::PREFLOP) 
-	{
-		return (int)ActionClass::RAISE_HALF;
+		acts = new ActionClass[5];
+		if (currHighBet[raiseNum] < OPEN_SIZE)
+		{
+			addAction(acts, numElems, ActionClass::OPEN);
+		}
+		else if (currHighBet[raiseNum] >= OPEN_SIZE && currHighBet[raiseNum] < BET3_SIZE)
+		{
+			addAction(acts, numElems, ActionClass::BET3);
+		}
+		else if (currHighBet[raiseNum] >= BET3_SIZE && currHighBet[raiseNum] < BET4_SIZE) 
+		{
+			addAction(acts, numElems, ActionClass::BET4);
+		}
+		else if (stacks[currTurn] > currHighBet[raiseNum])
+		{
+			addAction(acts, numElems, ActionClass::ALL_IN);
+		} 
 	}
 	else {
-		if (stacks[currTurn] <= currHighBet[raiseNum])
+		acts = new ActionClass[(int)ActionClass::NUM_ACTIONS_POST_FLOP];
+		int numRTP = numRaisesThisPhase();
+
+		if (stacks[currTurn] > currHighBet[raiseNum] && ((currHighBet[raiseNum] >= ALL_IN_THRES && numRTP > 0) || pots[potNum] > stacks[currTurn])) 
 		{
-			return (int)ActionClass::ALL_IN;
-		}
-		else if (raiseHalfSize() > stacks[currTurn])
+			addAction(acts, numElems, ActionClass::ALL_IN);
+		} 
+		if (numRTP < 3 && raiseQurtSize() < stacks[currTurn])
 		{
-			return (int)ActionClass::RAISE_HALF;
+			addAction(acts, numElems, ActionClass::RAISE_QUARTER);
 		}
-		else if (raisePotSize() > stacks[currTurn])
+		if (numRTP < 3 && raiseHalfSize() < stacks[currTurn])
 		{
-			return (int)ActionClass::RAISE_POT;
+			addAction(acts, numElems, ActionClass::RAISE_HALF);
 		}
-		else {
-			return (int)ActionClass::NUM_ACTIONS;
+		if (numRTP < 4 && raiseThrQurtSize() < stacks[currTurn])
+		{
+			addAction(acts, numElems, ActionClass::RAISE_THREE_QUARTERS);
+		}
+		if (numRTP < 4 && raisePotSize() < stacks[currTurn])
+		{
+			addAction(acts, numElems, ActionClass::RAISE_POT);
 		}
 	}
+
+	if (currHighBet[raiseNum] != BIG_BLIND) 
+	{
+		addAction(acts, numElems, ActionClass::CALL);
+	}
+	if (currHighBet[raiseNum] > 0)
+	{
+		addAction(acts, numElems, ActionClass::FOLD);
+	}
+	addAction(acts, numElems, ActionClass::NULL_ACTION);
+
+	return acts;
 }
 
 void Table::printTurn() 
@@ -539,28 +582,18 @@ bool Table::leftToAct()
 	return true;
 }
 
-int Table::winValue()
+int Table::winValue(int playerNum)
 {
-	return stacks[TRAVERSER] - START_STACK + pots[potNum];
+	return stacks[playerNum] - START_STACK + pots[potNum];
 }
 
-int Table::tieValue(int numTies) 
+int Table::raiseQurtSize()
 {
-	int potValue;
-	if (numTies == 2) 
+	if (currHighBet[raiseNum] == -1)
 	{
-		potValue = pots[potNum] >> 1;
+		return (pots[potNum] >> 2);
 	}
-	else {
-		potValue = pots[potNum] / numTies;
-	}
-	return stacks[TRAVERSER] - START_STACK + potValue;
-}
-
-/*To be inlined*/
-int Table::lossValue()
-{
-	return stacks[TRAVERSER] - START_STACK;
+	return 2 * currHighBet[raiseNum] + (pots[potNum] >> 2);
 }
 
 int Table::raiseHalfSize()
@@ -569,7 +602,16 @@ int Table::raiseHalfSize()
 	{
 		return pots[potNum] >> 1;
 	}
-	return 2 * currHighBet[raiseNum] + (pots[potNum] / 2);
+	return 2 * currHighBet[raiseNum] + (pots[potNum] >> 1);
+}
+
+int Table::raiseThrQurtSize()
+{
+	if (currHighBet[raiseNum] == -1)
+	{
+		return (pots[potNum] >> 2) * 3;
+	}
+	return 2 * currHighBet[raiseNum] + (pots[potNum] >> 2) * 3;
 }
 
 int Table::raisePotSize()

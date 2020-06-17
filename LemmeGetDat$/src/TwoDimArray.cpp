@@ -20,9 +20,6 @@ void TwoDimArray::allocArray()
 TwoDimArray::TwoDimArray(int initNumRows, int initNumCols) 
 	: elems(nullptr), uniqueElems(nullptr), numUnique(0), currUniqueIndex(-1), numRows(initNumRows), numCols(initNumCols)
 {
-#ifdef _DEBUG
-	assert(numRows < numCols);
-#endif
 	allocArray();
 	resetArray();
 	numRows = initNumRows;

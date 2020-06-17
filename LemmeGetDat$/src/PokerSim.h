@@ -35,5 +35,4 @@ public:
 	void updateRegrets(ActionClass action);
 
 	Regret* getAvailableActions();
-
 };

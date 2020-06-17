@@ -18,9 +18,7 @@
 #include <stdint.h>
 
 #define MULTITHREAD
+//#define VERBOSE
 
-//TODO: Optimizie TwoDimArray/bestHands for the many row, pairwise comparison case
-//TODO: Figure out pots history
-//TODO: Figure out how big blind can raise preflop
-//TODO: Figure out max raises, max potnums
-//TODO: Give more preflop options (3BB, 3 bet, 4 bet, all_in)
+//TODO: Optimize TwoDimArray/bestHands for the many row, pairwise comparison case
+//TODO: Fix showdown function for prob hist

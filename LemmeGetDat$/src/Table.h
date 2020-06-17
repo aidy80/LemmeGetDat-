@@ -65,7 +65,11 @@ private:
 	static constexpr int SMALL_BLIND = 1;
 	static constexpr int BIG_BLIND = SMALL_BLIND * 2;
 	static constexpr int START_STACK = 200;
-	static constexpr int TRAVERSER = 0;
+	static constexpr int OPEN_SIZE = 3 * BIG_BLIND;
+	static constexpr int BET3_SIZE = 10 * BIG_BLIND;
+	static constexpr int BET4_SIZE = 22 * BIG_BLIND;
+
+	static constexpr int ALL_IN_THRES = 33 * BIG_BLIND;
 
 	Hand* hands;
 
@@ -142,17 +146,19 @@ private:
 	int showdownValue();
 
 	/*Return value of traverser when all but one player folds*/
-	int winValue();
-
-	int lossValue();
-
-	int tieValue(int numTies);
+	int winValue(int playerNum);
 
 	int raiseHalfSize();
 
 	int raisePotSize();
 
+	int raiseQurtSize();
+
+	int raiseThrQurtSize();
+
 	void testPrevPhase();
+
+	int numRaisesThisPhase();
 
 	friend int InfoSet::getInfoId(const Table& table) const;
 public:
@@ -174,10 +180,12 @@ public:
 
 	/*With the list of actionClasses with the largest being the largest (possibly illegal) raise size, 
 	  return the index of the last element which is illegal */
-	int firstIllegalAction();
+	//int firstIllegalAction();
+
+	ActionClass* getLegalActions();
 
 	/*With the list of actionclasses, return the first action u can do. Realistically, this just prevents someone from folding when they can just call */
-	int firstLegalAction();
+	//int firstLegalAction();
 
 	int getUTG() const;
 	int getCurrTurn() const;

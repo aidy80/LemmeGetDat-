@@ -20,52 +20,47 @@ void PokerSim::MCCFR()
 
 void PokerSim::numActSeq(int& count, int depth)
 {
+	//int firstIllegal = table.firstIllegalAction();
+	//int firstLegal = table.firstLegalAction();
+	//for (int i = firstLegal; i < firstIllegal; i++)
+
 	int player = table.getCurrTurn();
-	int firstIllegal = table.firstIllegalAction();
-	int firstLegal = table.firstLegalAction();
-	for (int i = firstLegal; i < firstIllegal; i++)
-	//for (int i = table.firstLegalAction(); i < table.firstIllegalAction(); i++)
+	ActionClass* acts = table.getLegalActions();
+	for (ActionClass* currAct = acts; *currAct != ActionClass::NULL_ACTION; currAct++)
 	{
-		//if (table.getPhase() == Phase::TURN && count > 20947){
-		//if (count == 21357 || count == 22171) {
-		/*
-		if (count > 21357) {
+		#ifdef VERBOSE
 			std::cout << "Player " << table.getCurrTurn() << " ";
-			printAction((ActionClass)i);
+			printAction(*currAct);
+		#endif
+
+		int value = table.processAction(*currAct);
+
+		#ifdef VERBOSE
 			std::cout << "Depth: " << depth << " Count: " << count << std::endl;
-		}
-		*/
-
-		int value = table.processAction((ActionClass)i);
-
-		//if (table.getPhase() == Phase::TURN && count > 20947) {
-		//if (count == 21357 || count == 22171) {
-		//if (count > 21357) {
-		//	table.printTable();
-		//}
+			table.printTable();
+		#endif VERBOSE
 
 		if (value == NOT_FINISHED) {
 			numActSeq(count, depth + 1);
 		}
 		else {
 			count++;
-			//std::cout << "The traverser recieved " << value << " blinds" << std::endl;
-			//std::cout << "CURR COUNT " << count << "\n" << std::endl;
+			#ifdef VERBOSE
+				std::cout << "The traverser recieved " << value << " blinds" << std::endl;
+				std::cout << "CURR COUNT " << count << "\n" << std::endl;
+			#endif
 		}
 
-		table.unProcessAction((ActionClass)i, player);
+		table.unProcessAction(*currAct, player);
 
-		//if (table.getPhase() == Phase::TURN && count > 20947) {
-		//if (count == 21357 || count == 22171) {
-		/*
-		if (count > 21357) {
+		#ifdef VERBOSE
 			std::cout << "Player " << table.getCurrTurn() << " reverse ";
-			printAction((ActionClass)i);
+			printAction(*currAct);
 			std::cout << "Depth: " << depth << " Count: " << count << std::endl;
 			table.printTable();
-		}
-		*/
+		#endif VERBOSE
 	}
+	delete[]acts;
 }
 
 void PokerSim::traverseMCCFR(ActionClass initAction)
