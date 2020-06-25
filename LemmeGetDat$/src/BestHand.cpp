@@ -147,7 +147,7 @@ Params: pool - the cards on the pool
 		
 Return: The "flush suit" of the board. I.e. if there are at least 3 cards on the pool with the same suit. If 
 there is no possible flush on the pool, -1 is returned.*/
-int checkFlush(const Pool& pool, const Hand* hands, TwoDimArray& bestHands, PokerHand* pokerhands)
+int checkFlush(const Pool& pool, const Hand* hands, Ranged2DArray& bestHands, PokerHand* pokerhands)
 {
 	int suitHist[NUM_SUITS];
 	for (int i = 0; i < NUM_SUITS; i++) {
@@ -271,7 +271,7 @@ Params: pool - the pool cards. They must come sorted in order from lowest number
 					with the same suit as flushsuit (a numerical representation identical to the Card struct in Card.h)
 */
 void testPoolStraight(const Pool& pool, const int startCardIndex, const int endCardIndex, const Hand* hands, 
-					  TwoDimArray& bestHands, PokerHand* pokerhands, const int flushSuit = -1)
+					  Ranged2DArray& bestHands, PokerHand* pokerhands, const int flushSuit = -1)
 {	
 	int currPlayer;
 	while ((currPlayer = bestHands.getNextUnique()) != -1) {
@@ -350,7 +350,7 @@ Params: pool - the pool cards. They must come sorted in order from smallest numb
 		flushSuit - If a straightflush is being tested for, a flushSuit which is not -1 will indicate that we should only consider cards 
 					with the same suit as flushsuit (a numerical representation identical to the Card struct in Card.h)
 */
-void checkStraight(const Pool& originalPool, const Hand* hands, TwoDimArray& bestHands, PokerHand* pokerhands, const int flushSuit = -1)
+void checkStraight(const Pool& originalPool, const Hand* hands, Ranged2DArray& bestHands, PokerHand* pokerhands, const int flushSuit = -1)
 {
 	Pool appliedPool; //Change to card array?
 	int numPoolCards = fillAppliedPool(originalPool, appliedPool, flushSuit);
@@ -536,7 +536,7 @@ Params: pool - the boards pool cards
 					 that (unfolded) players have. This will be updated with the quads, triple, pair, 
 					 and high card info
 */
-void checkHighPairTripQuad(const Pool& pool, const Hand* hands, TwoDimArray& bestHands, PokerHand* pokerhands)
+void checkHighPairTripQuad(const Pool& pool, const Hand* hands, Ranged2DArray& bestHands, PokerHand* pokerhands)
 {
 	int* numHist = (int*)_malloca(sizeof(int) * NUM_CARD_NUMBERS);
 	fillNumHistPool(numHist, pool);
@@ -600,7 +600,7 @@ hands will be {12, 11}
 
 See fillBestHand for more param info
 */
-void getHighestHand(int* highestHand, const int potNum, TwoDimArray& bestHands, PokerHand* pokerhands, 
+void getHighestHand(int* highestHand, const int potNum, Ranged2DArray& bestHands, PokerHand* pokerhands, 
 						   const int winningHands, const HandType winHandType) {
 	for (int i = 0; i < bestHands.getRowSize(potNum); i++)
 	{
@@ -644,7 +644,7 @@ and record whether or not they do into the WinningHand array.
 See fillBestHand for more specific param information
 */
 void fillWinType(WinningHand* handsWithIndex, int* highestHand, const int potNum, 
-						TwoDimArray& bestHands, PokerHand* pokerhands, const int winningHands, const HandType winHandType) {
+						Ranged2DArray& bestHands, PokerHand* pokerhands, const int winningHands, const HandType winHandType) {
 	for (int i = 0; i < bestHands.getRowSize(potNum); i++) {
 		int currPlayer = bestHands.get(potNum, i);
 		handsWithIndex[i].player = currPlayer;
@@ -736,7 +736,7 @@ players 1 and 2 tied but both beat player 3, we would see the corresponding row 
 					  Specifically, info about a given player has quads, triples, two pairs, flushes, ..., etc 
 					  along with their best kicker(s).
 */
-void fillBestHands(TwoDimArray& bestHands, const int potNum, const int winningHands, const HandType winHandType, PokerHand* pokerhands) 
+void fillBestHands(Ranged2DArray& bestHands, const int potNum, const int winningHands, const HandType winHandType, PokerHand* pokerhands) 
 {
 	WinningHand* handsWithIndex = (WinningHand*)_malloca(sizeof(WinningHand) * bestHands.getRowSize(potNum));
 	int highestHand[2] = { -1, -1 };
@@ -782,7 +782,7 @@ Params: pool - The pool cards on board
 					| 1  2 -1 -1 -1 -1|
 					| 4 -1 -1 -1 -1 -1|
 */
-void getBestHands(Pool& pool, const Hand* allHands, TwoDimArray& bestHands)
+void getBestHands(Pool& pool, const Hand* allHands, Ranged2DArray& bestHands)
 {
 	PokerHand* pokerhands = (PokerHand*)_malloca(sizeof(PokerHand) * bestHands.getNumCols());
 	int currPlayer;

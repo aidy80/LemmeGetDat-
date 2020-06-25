@@ -142,20 +142,28 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="src\Simp2DArray.t">
+      <FileType>Document</FileType>
+    </ClInclude>
     <ClCompile Include="src\InfoSet.cpp" />
     <ClCompile Include="src\BestHand.cpp" />
     <ClCompile Include="src\Card.cpp" />
     <ClCompile Include="src\Deck.cpp" />
+    <ClCompile Include="src\PokerCards.cpp" />
     <ClCompile Include="src\UnitTests\EquityCalc.cpp" />
     <ClCompile Include="src\Main.cpp" />
     <ClCompile Include="src\PokerSim.cpp" />
     <ClCompile Include="src\Random.cpp" />
     <ClCompile Include="src\UnitTests\TestBestHand.cpp" />
     <ClCompile Include="src\Table.cpp" />
-    <ClCompile Include="src\TwoDimArray.cpp" />
+    <ClCompile Include="src\Ranged2DArray.cpp" />
     <ClCompile Include="src\UnitTests\TestDeck.cpp" />
+    <ClCompile Include="src\UnitTests\TestPokerCards.cpp" />
+    <ClCompile Include="src\WinProb.cpp" />
+    <ClInclude Include="src\UnitTests\TestPokerCards.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\Simp2DArray.h" />
     <ClInclude Include="src\InfoSet.h" />
     <ClInclude Include="src\BestHand.h" />
     <ClInclude Include="src\Card.h" />
@@ -167,8 +175,11 @@
     <ClInclude Include="src\Random.h" />
     <ClInclude Include="src\UnitTests\TestBestHand.h" />
     <ClInclude Include="src\Table.h" />
-    <ClInclude Include="src\TwoDimArray.h" />
+    <ClInclude Include="src\Ranged2DArray.h" />
     <ClInclude Include="src\UnitTests\TestDeck.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="output.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -7,7 +7,7 @@ constexpr int NUM_TRIALS = 1712304; // C(48, 5)
 constexpr int NUM_THREADS = 8;
 constexpr int NUM_TRIALS_PER_THREAD = NUM_TRIALS / NUM_THREADS;
 
-void checkWinners(TwoDimArray& winners, Hand* hands, int numHands, Pool& pool) {
+void checkWinners(Ranged2DArray& winners, Hand* hands, int numHands, Pool& pool) {
 	if (winners.get(0, 0) == -1) //Error check
 	{
 		printPool(pool, NUM_POOL_CARDS);
@@ -24,7 +24,7 @@ void checkWinners(TwoDimArray& winners, Hand* hands, int numHands, Pool& pool) {
 
 void sampleHands(int threadId, int numTrials, int32_t* numberOfWins, int32_t* numberOfTies, Deck deck, Hand* hands, int numHands) 
 {
-	TwoDimArray winners(1, numHands);
+	Ranged2DArray winners(1, numHands, numHands);
 	Pool pool;
 	deck.changeSeed(threadId * (int)time(NULL));
 	

@@ -11,7 +11,15 @@ constexpr int FLOP3_FLAG = 0x4;
 constexpr int TURN_FLAG = 0x8;
 constexpr int RIVER_FLAG = 0x10;
 
+constexpr int INFO_KEY_SIZE = 160;
+
 constexpr int POOL_BIT_PACK[5] = { FLOP1_FLAG, FLOP2_FLAG, FLOP3_FLAG, TURN_FLAG, RIVER_FLAG };
+
+/*Representation of the current phase of a game*/
+enum class Phase
+{
+	PREFLOP, FLOP, TURN, RIVER, Count
+};
 
 /*Representation of a players hand*/
 struct Hand
@@ -25,6 +33,8 @@ struct Hand
 	Hand(const Card* initHand) : cards{ initHand[0], initHand[1] } {}
 	Hand(const CardEnum* initHand) : cards{ { getCardsNumber(initHand[0]), getCardsSuit(initHand[0]) },
 									  { getCardsNumber(initHand[1]), getCardsSuit(initHand[1]) } } {}
+	Hand(const CardEnum card1, const CardEnum card2) : cards{ { getCardsNumber(card1), getCardsSuit(card1) },
+														      { getCardsNumber(card2), getCardsSuit(card2) } } {}
 	Hand() : cards() {}
 
 	/*Different ways to change the cards in a given hand*/
@@ -55,6 +65,36 @@ struct Hand
 	}
 };
 
+enum class HandID 
+{
+	TWTW, TWTHo, TWFOo, TWFIo, TWSIo, TWSEo, TWEIo, TWNIo, TWTEo, TWJAo, TWQUo, TWKIo, TWACo, 
+	THTH, THFOo, THFIo, THSIo, THSEo, THEIo, THNIo, THTEo, THJAo, THQUo, THKIo, THACo, 
+	FOFO, FOFIo, FOSIo, FOSEo, FOEIo, FONIo, FOTEo, FOJAo, FOQUo, FOKIo, FOACo, 
+	FIFI, FISIo, FISEo, FIEIo, FINIo, FITEo, FIJAo, FIQUo, FIKIo, FIACo, 
+	SISI, SISEo, SIEIo, SINIo, SITEo, SIJAo, SIQUo, SIKIo, SIACo, 
+	SESE, SEEIo, SENIo, SETEo, SEJAo, SEQUo, SEKIo, SEACo, 
+	EIEI, EINIo, EITEo, EIJAo, EIQUo, EIKIo, EIACo, 
+	NINI, NITEo, NIJAo, NIQUo, NIKIo, NIACo, 
+	TETE, TEJAo, TEQUo, TEKIo, TEACo, 
+	JAJA, JAQUo, JAKIo, JAACo, 
+	QUQU, QUKIo, QUACo, 
+	KIKI, KIACo, 
+	ACAC,
+	TWTHs, TWFOs, TWFIs, TWSIs, TWSEs, TWEIs, TWNIs, TWTEs, TWJAs, TWQUs, TWKIs, TWACs, 
+	THFOs, THFIs, THSIs, THSEs, THEIs, THNIs, THTEs, THJAs, THQUs, THKIs, THACs, 
+	FOFIs, FOSIs, FOSEs, FOEIs, FONIs, FOTEs, FOJAs, FOQUs, FOKIs, FOACs, 
+	FISIs, FISEs, FIEIs, FINIs, FITEs, FIJAs, FIQUs, FIKIs, FIACs, 
+	SISEs, SIEIs, SINIs, SITEs, SIJAs, SIQUs, SIKIs, SIACs, 
+	SEEIs, SENIs, SETEs, SEJAs, SEQUs, SEKIs, SEACs, 
+	EINIs, EITEs, EIJAs, EIQUs, EIKIs, EIACs, 
+	NITEs, NIJAs, NIQUs, NIKIs, NIACs, 
+	TEJAs, TEQUs, TEKIs, TEACs, 
+	JAQUs, JAKIs, JAACs, 
+	QUKIs, QUACs, 
+	KIACs,
+	NUM_HAND_COMBOS
+};
+
 /*A different representation of the pools*/
 struct PoolCardNames
 {
@@ -76,8 +116,8 @@ struct Pool {
 						  d.getNextPoolCard(), d.getNextPoolCard(), d.getNextPoolCard() } {}
 
 	/*Use a very specific pool*/
-	Pool(const Card* initCards) : cards{initCards[0], initCards[1], initCards[2], initCards[3], initCards[4] } {}
-	Pool(const CardEnum* initCards) 
+	Pool(const Card* initCards) : cards{ initCards[0], initCards[1], initCards[2], initCards[3], initCards[4] } {}
+	Pool(const CardEnum* initCards)
 	{
 		for (int i = 0; i < NUM_POOL_CARDS; i++) {
 			cards[i].number = getCardsNumber(initCards[i]);
@@ -85,14 +125,15 @@ struct Pool {
 		}
 	}
 
-	Pool(const Pool& obj) 
+	/*Copy and assignment constructors*/
+	Pool(const Pool& obj)
 	{
 		for (int i = 0; i < NUM_POOL_CARDS; i++) {
 			cards[i] = obj.cards[i];
 		}
 	}
 
-	Pool& operator=(const Pool& obj) 
+	Pool& operator=(const Pool& obj)
 	{
 		for (int i = 0; i < NUM_POOL_CARDS; i++) {
 			cards[i] = obj.cards[i];
@@ -109,7 +150,7 @@ struct Pool {
 			cards[i] = deck.getNextPoolCard();
 		}
 	}
-		
+
 	/*Set a new pool of cards from a desired list*/
 	void setCards(const CardEnum* newCards) {
 		for (int i = 0; i < NUM_POOL_CARDS; i++) {
@@ -125,26 +166,33 @@ struct Pool {
 	}
 };
 
+/*Retrieve the id for a given pool*/
+void getPoolID(Pool& pool, Phase currPhase, std::bitset<INFO_KEY_SIZE>& infoKey);
+
+/*Retrieve the id for a given hand*/
+HandID getHandID(Hand& currHand);
+
 /*Print the string representation of the pool*/
-inline void printPool(const Pool& pool, int numCards) 
-{
-	std::cout << "Pool cards: ";
-	if (numCards == 0) {
-		std::cout << "Preflop, so none" << std::endl;
-	}
-	else {
-		for (int i = 0; i < numCards - 1; i++)
-		{
-			std::cout << getCardsString(pool.cards[i]) << ", ";
-		}
-		std::cout << getCardsString(pool.cards[numCards - 1]) << std::endl;
-	}
-}
+void printPool(const Pool& pool, int numCards);
 
 /*Print the string representation for a hand*/
-inline void printHand(const Hand& hand)
+void printHand(const Hand& hand);
+
+inline int numCardsInPhase(Phase phase)
 {
-	std::cout << "Hand: ";
-	std::cout << getCardsString(hand.cards[0]) << ", ";
-	std::cout << getCardsString(hand.cards[1]) << std::endl;;
+#ifdef _DEBUG
+	assert(phase != Phase::Count);
+#endif
+	switch(phase)
+	{
+	case Phase::PREFLOP:
+		return 0;
+	case Phase::FLOP:
+		return 3;
+	case Phase::TURN:
+		return 4;
+	case Phase::RIVER:
+		return 5;
+	}
+	return -1;
 }

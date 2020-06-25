@@ -13,19 +13,17 @@ PokerSim::~PokerSim()
 	delete[]actSeq;
 }
 
-void PokerSim::MCCFR()
-{
-	traverseMCCFR(ActionClass::NULL_ACTION);
-}
+void PokerSim::findSolution()
+{}
 
-void PokerSim::numActSeq(int& count, int depth)
+void PokerSim::numActSeq(int& count, int depth, int& maxDepth)
 {
-	//int firstIllegal = table.firstIllegalAction();
-	//int firstLegal = table.firstLegalAction();
-	//for (int i = firstLegal; i < firstIllegal; i++)
-
 	int player = table.getCurrTurn();
 	ActionClass* acts = table.getLegalActions();
+	if (depth > maxDepth) 
+	{
+		maxDepth = depth;
+	}
 	for (ActionClass* currAct = acts; *currAct != ActionClass::NULL_ACTION; currAct++)
 	{
 		#ifdef VERBOSE
@@ -41,10 +39,12 @@ void PokerSim::numActSeq(int& count, int depth)
 		#endif VERBOSE
 
 		if (value == NOT_FINISHED) {
-			numActSeq(count, depth + 1);
+			count++;
+
+			numActSeq(count, depth + 1, maxDepth);
 		}
 		else {
-			count++;
+			//count++;
 			#ifdef VERBOSE
 				std::cout << "The traverser recieved " << value << " blinds" << std::endl;
 				std::cout << "CURR COUNT " << count << "\n" << std::endl;
@@ -61,13 +61,4 @@ void PokerSim::numActSeq(int& count, int depth)
 		#endif VERBOSE
 	}
 	delete[]acts;
-}
-
-void PokerSim::traverseMCCFR(ActionClass initAction)
-{
-	Regret* currReg;
-	if (initAction == ActionClass::NULL_ACTION) 
-	{
-		currReg = infoset.getRegrets(table.getUTG(), actSeq, lenActSeq);
-	}
 }

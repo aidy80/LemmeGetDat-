@@ -1,2 +1,5 @@
-The number of action sequences found was 259652095
--35760 ms
+Runnigng handID tests
+PASSED all HandID tests!
+Testing Pool ID
+Pool ID Passed!!
+-0.6008 ms

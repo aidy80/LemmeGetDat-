@@ -2,7 +2,16 @@
 
 #include "pch.h"
 #include "Table.h"
-#include "TwoDimArray.h"
+#include "Ranged2DArray.h"
+
+constexpr int P1 = 0x1;
+constexpr int P2 = 0x2;
+constexpr int P3 = 0x4;
+constexpr int P4 = 0x8;
+constexpr int P5 = 0x10;
+constexpr int P6 = 0x20;
+
+constexpr int PLAYER_BIT_PACK[6] = { P1, P2, P3, P4, P5, P6 };
 
 /*Represents the type of hand that a given player has. 
 If one of the first 5 fields have a non-value, 
@@ -19,6 +28,7 @@ struct PokerHand
 	int kicker2 = -1;
 };
 
+/*Initialize a pokerhand struct*/
 inline void initPokerHand(PokerHand& pokerhand) {
 	pokerhand.straightFlush = false;
 	pokerhand.flush = false;
@@ -54,4 +64,4 @@ Return - The best hand(s) will be outputted in the bestHands 2Darray (the input 
 				1 4 -1 -1 -1 -1
 				3 -1 -1 -1 -1 -1
 						*/
-void getBestHands(Pool& pool, const Hand* allHands, TwoDimArray& bestHands);
+void getBestHands(Pool& pool, const Hand* allHands, Ranged2DArray& bestHands);

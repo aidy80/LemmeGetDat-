@@ -4,55 +4,9 @@
 #include "PokerCards.h"
 #include "InfoSet.h"
 #include "BestHand.h"
-#include "TwoDimArray.h"
-
-constexpr int P1 = 0x1;
-constexpr int P2 = 0x2;
-constexpr int P3 = 0x4;
-constexpr int P4 = 0x8;
-constexpr int P5 = 0x10;
-constexpr int P6 = 0x20;
-
-constexpr int PLAYER_BIT_PACK[6] = { P1, P2, P3, P4, P5, P6 };
+#include "Ranged2DArray.h"
 
 constexpr int NOT_FINISHED = SHRT_MAX;
-
-/*Representation of the current phase of a game*/
-enum class Phase
-{
-	PREFLOP, FLOP, TURN, RIVER, Count
-};
-
-/*State of the pot during one turn in the game*/
-struct Pot
-{
-	int amount;
-	bool* folded;
-	int numFolded = 0;
-	const int TOTAL_BLINDS = 3;
-
-	Pot() : folded(nullptr), amount(0) {}
-
-	Pot(const int numPlayers) : folded(new bool[numPlayers]), amount(0)
-	{	
-		reset(numPlayers);
-	}
-
-	~Pot()
-	{
-		delete[]folded;
-	}
-
-	void reset(const int numPlayers) 
-	{
-		amount = TOTAL_BLINDS;
-		for (int i = 0; i < numPlayers; i++)
-		{
-			folded[i] = false;
-		}
-		numFolded = 0;
-	}
-};
 
 /*Implementation of the "Table". 
 Holds all state data: the hands, the players stacks, 
@@ -89,21 +43,12 @@ private:
 	int* raiser; 
 	int* currHighBet; 
 
-	int raiseRaise;
-	int checkRaise;
-	int newTurnRaise;
-
-	//Pot pot;
-
 	Deck deck;
 	Pool pool;
 
-	TwoDimArray winners;
+	Ranged2DArray winners;
 
 	Phase phase;
-
-	/*Returns the number of pool cards players have access to in a given phase*/
-	static int numCardsInPhase(Phase phase);
 
 	/*If playerIndex == numPlayer return 0, otherwise playerIndex*/
 	int checkPlayerOverflow(int playerIndex) const;
@@ -148,16 +93,23 @@ private:
 	/*Return value of traverser when all but one player folds*/
 	int winValue(int playerNum);
 
+	/*Obtain the half pot raise size given the current pot and raise size*/
 	int raiseHalfSize();
 
+	/*Obtain the pot raise size given the current pot and raise size*/
 	int raisePotSize();
 
+	/*Obtain the 3/4 pot raise size given the current pot and raise size*/
 	int raiseQurtSize();
 
+	/*Obtain the 1/3 pot raise size given the current pot and raise size*/
 	int raiseThrQurtSize();
 
+	/*Potentially go to the previous phase if it is 
+	currently the first turn of a given phase*/
 	void testPrevPhase();
 
+	/*Find the current number of raises that have occurred in the given round. */
 	int numRaisesThisPhase();
 
 	friend int InfoSet::getInfoId(const Table& table) const;
@@ -187,6 +139,7 @@ public:
 	/*With the list of actionclasses, return the first action u can do. Realistically, this just prevents someone from folding when they can just call */
 	//int firstLegalAction();
 
+	/*Normal getters*/
 	int getUTG() const;
 	int getCurrTurn() const;
 	int getNumFolded() const;
@@ -199,23 +152,4 @@ public:
 	void printMoney();
 	void printTable();
 };
-
-inline int Table::numCardsInPhase(Phase phase)
-{
-#ifdef _DEBUG
-	assert(phase != Phase::Count);
-#endif
-	switch(phase)
-	{
-	case Phase::PREFLOP:
-		return 0;
-	case Phase::FLOP:
-		return 3;
-	case Phase::TURN:
-		return 4;
-	case Phase::RIVER:
-		return 5;
-	}
-	return -1;
-}
 

@@ -5,7 +5,7 @@ void testBestHand(Pool& pool, Hand *hands, std::string description, std::vector<
 #ifdef _DEBUG
 	assert(expected.size() < INT_MAX && expected[0].size() < INT_MAX);
 #endif
-	TwoDimArray bestHands(expected.size(), expected[0].size());
+	Ranged2DArray bestHands(expected.size(), expected[0].size(), expected[0].size());
 	if (pots.has_value()) {
 		for (unsigned i = 0; i < pots->size(); i++) {
 			for (unsigned j = 0; j < pots->at(i).size(); j++) {
@@ -16,7 +16,7 @@ void testBestHand(Pool& pool, Hand *hands, std::string description, std::vector<
 	else {
 		for (unsigned i = 0; i < expected.size(); i++) {
 			for (unsigned j = 0; j < expected[i].size(); j++) {
-				bestHands.set(i, j, j);
+				bestHands.appendToRow(i, j);
 			}
 		}
 	}
@@ -626,9 +626,13 @@ void testTieCase()
 	hands[0].setHand(CardEnum::TWH, CardEnum::THH);
 	hands[1].setHand(CardEnum::TWD, CardEnum::FOD);
 
-	TwoDimArray bestHands(1, 2);
+	Ranged2DArray bestHands(1, 2, 2);
 
 	for (int i = 0; i < numTrials; i++) {
+		for (int j = 0; j < 2; j++) {
+			bestHands.set(0, j, j);
+		}
+
 		getBestHands(pool, hands, bestHands);
 		printPool(pool, NUM_POOL_CARDS);
 		if (bestHands.get(0, 1) == -1) {
@@ -761,11 +765,11 @@ void allBestHandTests()
 
 void runBHUnitTests()
 {
-	//allBestHandTests();
-	//testTieCase();
+	allBestHandTests();
+	testTieCase();
 
-	//testMultiWayPot();
-	//testSidePots();
+	testMultiWayPot();
+	testSidePots();
 
 	testBestHandAndEquity(2, 3);
 	//testBestHandAndEquity(4, 3);

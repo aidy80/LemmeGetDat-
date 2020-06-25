@@ -15,10 +15,10 @@
 #include <mutex>
 #include <chrono>
 #include <climits>
+#include <bitset>
 #include <stdint.h>
 
 #define MULTITHREAD
 //#define VERBOSE
 
-//TODO: Optimize TwoDimArray/bestHands for the many row, pairwise comparison case
 //TODO: Fix showdown function for prob hist

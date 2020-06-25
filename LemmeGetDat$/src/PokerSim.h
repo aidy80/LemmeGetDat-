@@ -19,20 +19,11 @@ public:
 
 	~PokerSim();
 
-	void MCCFR();
-
-	void traverseMCCFR(ActionClass action);
-	
-	void traverseMCCFRpruned(ActionClass action);
-
-	/*Recursively the value of a given action
-	and each of the possible following actions*/
-	int getValue(ActionClass action);
+	/*Find a solution to poker. Specifically, given a hand, 
+	pool cards, action sequences, and the players position, find the 
+	optimal distribution of correct decisions.*/
+	void findSolution();
 
 	/*Return the number of possible action sequence combos. Must pass in count = 0 for the starting value to get accurate results*/
-	void numActSeq(int& count, int depth);
-
-	void updateRegrets(ActionClass action);
-
-	Regret* getAvailableActions();
+	void numActSeq(int& count, int depth, int& maxDepth);
 };

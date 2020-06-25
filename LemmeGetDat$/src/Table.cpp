@@ -14,14 +14,10 @@ Table::Table(int numPlayers) :
 	currHighBet(new int[200 * (int)Phase::Count]), //fix later to be optimal
 	pots(new int[500 * (int)Phase::Count]), //Fix later to be optimal
 	pool(), deck(), 
-	winners(numPlayers*numPlayers, numPlayers),
+	winners(numPlayers*numPlayers, numPlayers, numPlayers),
 	phase(Phase::PREFLOP)
 {
 	startNewGame();
-
-	raiseRaise = 0;
-	checkRaise = 0;
-	newTurnRaise = 0;
 }
 
 void Table::startNewGame() 
@@ -43,8 +39,6 @@ void Table::startNewGame()
 	int bigBlind = checkPlayerOverflow(smallBlind + 1);
 	stacks[smallBlind] -= SMALL_BLIND;
 	stacks[bigBlind] -= BIG_BLIND;
-	stacks[numPlayers] = START_STACK - BIG_BLIND;
-
 	raiseNum = 0;
 	currHighBet[raiseNum] = BIG_BLIND;
 	raiser[raiseNum] = numPlayers;
@@ -103,7 +97,6 @@ int Table::nextTurn()
 
 		raiseNum++;
 		raiser[raiseNum] = currTurn;
-		newTurnRaise++;
 		currHighBet[raiseNum] = -1;
 	}
 	return NOT_FINISHED;
@@ -118,7 +111,6 @@ void Table::testPrevPhase()
 		assert((int)(phase) != -1);
 #endif
 		raiseNum--;
-		newTurnRaise--;
 		currTurn = raiser[raiseNum];
 	}
 }
@@ -132,7 +124,6 @@ void Table::prevTurn()
 		assert((int)(phase) != -1);
 #endif
 		raiseNum--;
-		newTurnRaise--;
 		currTurn = raiser[raiseNum];
 	}
 
@@ -151,7 +142,6 @@ inline void Table::raise(int player, int raiseSize)
 	stacks[player] -= raiseSize;
 
 	raiseNum++;
-	raiseRaise++;
 	raiser[raiseNum] = player;
 	currHighBet[raiseNum] = raiseSize;
 }
@@ -159,9 +149,6 @@ inline void Table::raise(int player, int raiseSize)
 /*Processes every legal possible action except fold for the current turn then increments to the next turn*/
 int Table::processAction(const ActionClass act) 
 { 
-#ifdef _DEBUG
-	assert(raiseNum == raiseRaise + checkRaise + newTurnRaise);
-#endif
 	switch (act)
 	{
 	case ActionClass::FOLD:
@@ -181,7 +168,6 @@ int Table::processAction(const ActionClass act)
 		if (currHighBet[raiseNum] == -1) 
 		{
 			raiseNum++;
-			checkRaise++;
 			raiser[raiseNum] = currTurn;
 			currHighBet[raiseNum] = 0;
 		}
@@ -193,7 +179,6 @@ int Table::processAction(const ActionClass act)
 		if (phase == Phase::PREFLOP && raiseNum == 0)  
 		{
 			raiseNum++;
-			checkRaise++;
 			raiser[raiseNum] = currTurn;
 			currHighBet[raiseNum] = BIG_BLIND;
 		}
@@ -245,15 +230,11 @@ inline void Table::unRaise(int player)
 #endif
 	stacks[player] += pots[potNum] - pots[potNum - 1];
 	raiseNum--;
-	raiseRaise--;
 	potNum--;
 }
 
 void Table::unProcessAction(const ActionClass act, const int player)
 {
-#ifdef _DEBUG
-	assert(raiseNum == raiseRaise + checkRaise + newTurnRaise);
-#endif
 	switch (act)
 	{
 	case ActionClass::FOLD:
@@ -273,7 +254,6 @@ void Table::unProcessAction(const ActionClass act, const int player)
 		if (firstToAct[(int)phase] == currTurn && currHighBet[raiseNum - 1] == -1)
 		{
 			raiseNum--;
-			checkRaise--;
 		}
 
 		#ifdef _DEBUG
@@ -286,7 +266,6 @@ void Table::unProcessAction(const ActionClass act, const int player)
 		if (phase == Phase::PREFLOP && raiseNum == 1 && raiser[raiseNum] == currTurn)  
 		{
 			raiseNum--;
-			checkRaise--;
 			raiser[raiseNum] = numPlayers;
 		}
 
@@ -373,7 +352,18 @@ ActionClass* Table::getLegalActions()
 			addAction(acts, numElems, ActionClass::ALL_IN);
 		} 
 	}
+	/*
 	else {
+		acts = new ActionClass[(int)ActionClass::NUM_ACTIONS_POST_FLOP];
+		int numRTP = numRaisesThisPhase();
+		if (numRTP < 3 && raiseHalfSize() < stacks[currTurn])
+		{
+			addAction(acts, numElems, ActionClass::RAISE_HALF);
+		}
+
+	}
+	*/
+	else if (phase == Phase::FLOP) {
 		acts = new ActionClass[(int)ActionClass::NUM_ACTIONS_POST_FLOP];
 		int numRTP = numRaisesThisPhase();
 
@@ -396,6 +386,19 @@ ActionClass* Table::getLegalActions()
 		if (numRTP < 4 && raisePotSize() < stacks[currTurn])
 		{
 			addAction(acts, numElems, ActionClass::RAISE_POT);
+		}
+	}
+	else {
+		acts = new ActionClass[(int)ActionClass::NUM_ACTIONS_POST_FLOP];
+		int numRTP = numRaisesThisPhase();
+
+		if (stacks[currTurn] > currHighBet[raiseNum] && ((currHighBet[raiseNum] >= ALL_IN_THRES && numRTP > 0) || pots[potNum] > stacks[currTurn])) 
+		{
+			addAction(acts, numElems, ActionClass::ALL_IN);
+		} 
+		if (numRTP < 3 && raiseHalfSize() < stacks[currTurn])
+		{
+			addAction(acts, numElems, ActionClass::RAISE_HALF);
 		}
 	}
 
@@ -473,7 +476,7 @@ void Table::printMoney()
 #endif
 	
 	std::cout << "Current raiser is player " << raiser[raiseNum] << " with a bet of " << currHighBet[raiseNum] << "\n";
-	std::cout << "raiseRaise: " << raiseRaise << ". checkRaise " << checkRaise << ". newTurnRaise: " << newTurnRaise << ". numRaise: " << raiseNum << " potNum: " << potNum << "." << std::endl;
+	std::cout << "numRaise: " << raiseNum << " potNum: " << potNum << "." << std::endl;
 }
 
 void Table::printTable() 
