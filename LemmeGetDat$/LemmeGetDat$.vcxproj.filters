@@ -57,7 +57,10 @@
     <ClCompile Include="src\WinProb.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\UnitTests\TestPokerCards.cpp">
+    <ClCompile Include="src\UnitTests\TestInfoSet.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\CombMath.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -108,6 +111,12 @@
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="src\UnitTests\TestPokerCards.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\UnitTests\TestInfoSet.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\CombMath.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

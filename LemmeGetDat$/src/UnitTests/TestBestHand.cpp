@@ -763,7 +763,7 @@ void allBestHandTests()
 }
 
 
-void runBHUnitTests()
+void testBestHand()
 {
 	allBestHandTests();
 	testTieCase();

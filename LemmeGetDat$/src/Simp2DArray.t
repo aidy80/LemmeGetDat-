@@ -12,27 +12,36 @@ Simp2DArray<T>::Simp2DArray(int numRows, int numCols)
 }
 
 template <typename T>
+Simp2DArray<T>::Simp2DArray(Simp2DArray&& other) noexcept
+{
+	numRows = other.numRows;
+	numCols = other.numCols;
+	elems = other.elems;
+}
+
+template <typename T>
 Simp2DArray<T>::~Simp2DArray() 
 {
 	delete[] elems;
 }
 
 template <typename T>
-T Simp2DArray<T>::get(int i, int j) 
+inline T Simp2DArray<T>::get(int i, int j) 
 {
 #ifdef _DEBUG
 	assert(i < numRows);
 	assert(j < numCols);
 #endif
-	return elems[i * numCols + j];
+	return elems[twoDto1D(i, j)];
 }
 
 template <typename T>
-void Simp2DArray<T>::set(int i, int j, T newVal)
+inline void Simp2DArray<T>::set(int i, int j, T newVal)
 {
 #ifdef _DEBUG
 	assert(i < numRows);
 	assert(j < numCols);
 #endif
-	elems[i * numCols + j] = newVal;
+	elems[twoDto1D(i, j)] = newVal;
 }
+

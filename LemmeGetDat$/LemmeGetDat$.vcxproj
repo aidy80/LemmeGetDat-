@@ -142,9 +142,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="src\CombMath.h" />
     <ClInclude Include="src\Simp2DArray.t">
       <FileType>Document</FileType>
     </ClInclude>
+    <ClCompile Include="src\CombMath.cpp" />
     <ClCompile Include="src\InfoSet.cpp" />
     <ClCompile Include="src\BestHand.cpp" />
     <ClCompile Include="src\Card.cpp" />
@@ -158,8 +160,9 @@
     <ClCompile Include="src\Table.cpp" />
     <ClCompile Include="src\Ranged2DArray.cpp" />
     <ClCompile Include="src\UnitTests\TestDeck.cpp" />
-    <ClCompile Include="src\UnitTests\TestPokerCards.cpp" />
+    <ClCompile Include="src\UnitTests\TestInfoSet.cpp" />
     <ClCompile Include="src\WinProb.cpp" />
+    <ClInclude Include="src\UnitTests\TestInfoSet.h" />
     <ClInclude Include="src\UnitTests\TestPokerCards.h" />
   </ItemGroup>
   <ItemGroup>

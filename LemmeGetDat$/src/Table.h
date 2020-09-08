@@ -19,9 +19,9 @@ private:
 	static constexpr int SMALL_BLIND = 1;
 	static constexpr int BIG_BLIND = SMALL_BLIND * 2;
 	static constexpr int START_STACK = 200;
-	static constexpr int OPEN_SIZE = 3 * BIG_BLIND;
-	static constexpr int BET3_SIZE = 10 * BIG_BLIND;
-	static constexpr int BET4_SIZE = 22 * BIG_BLIND;
+	static constexpr int PRE_OPEN_SIZE = 3 * BIG_BLIND;
+	static constexpr int PRE_BET3_SIZE = 10 * BIG_BLIND;
+	static constexpr int PRE_BET4_SIZE = 22 * BIG_BLIND;
 
 	static constexpr int ALL_IN_THRES = 33 * BIG_BLIND;
 
@@ -93,17 +93,31 @@ private:
 	/*Return value of traverser when all but one player folds*/
 	int winValue(int playerNum);
 
-	/*Obtain the half pot raise size given the current pot and raise size*/
-	int raiseHalfSize();
-
-	/*Obtain the pot raise size given the current pot and raise size*/
-	int raisePotSize();
-
 	/*Obtain the 3/4 pot raise size given the current pot and raise size*/
 	int raiseQurtSize();
 
 	/*Obtain the 1/3 pot raise size given the current pot and raise size*/
+	int raiseThirdSize();
+
+	/*Obtain the half pot raise size given the current pot and raise size*/
+	int raiseHalfSize();
+
+	/*Obtain the 1/3 pot raise size given the current pot and raise size*/
 	int raiseThrQurtSize();
+
+	/*Obtain the pot raise size given the current pot and raise size*/
+	int raisePotSize();
+
+	/*Obtain the 1/3 pot raise size given the current pot and raise size*/
+	int open1Size();
+
+	int open2Size();
+
+	int open3Size();
+
+	int bet3Size();
+
+	int bet4Size();
 
 	/*Potentially go to the previous phase if it is 
 	currently the first turn of a given phase*/
@@ -112,7 +126,7 @@ private:
 	/*Find the current number of raises that have occurred in the given round. */
 	int numRaisesThisPhase();
 
-	friend int InfoSet::getInfoId(const Table& table) const;
+	//friend int InfoSet::getInfoId(const Table& table) const;
 public:
 	Table(int numPlayers);
 	~Table();

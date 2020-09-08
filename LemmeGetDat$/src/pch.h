@@ -17,6 +17,7 @@
 #include <climits>
 #include <bitset>
 #include <stdint.h>
+#include <unordered_set>
 
 #define MULTITHREAD
 //#define VERBOSE

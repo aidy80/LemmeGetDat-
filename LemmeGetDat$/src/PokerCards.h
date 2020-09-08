@@ -11,7 +11,6 @@ constexpr int FLOP3_FLAG = 0x4;
 constexpr int TURN_FLAG = 0x8;
 constexpr int RIVER_FLAG = 0x10;
 
-constexpr int INFO_KEY_SIZE = 160;
 
 constexpr int POOL_BIT_PACK[5] = { FLOP1_FLAG, FLOP2_FLAG, FLOP3_FLAG, TURN_FLAG, RIVER_FLAG };
 
@@ -63,36 +62,6 @@ struct Hand
 		cards[0] = deck.getNextHandCard();
 		cards[1] = deck.getNextHandCard();
 	}
-};
-
-enum class HandID 
-{
-	TWTW, TWTHo, TWFOo, TWFIo, TWSIo, TWSEo, TWEIo, TWNIo, TWTEo, TWJAo, TWQUo, TWKIo, TWACo, 
-	THTH, THFOo, THFIo, THSIo, THSEo, THEIo, THNIo, THTEo, THJAo, THQUo, THKIo, THACo, 
-	FOFO, FOFIo, FOSIo, FOSEo, FOEIo, FONIo, FOTEo, FOJAo, FOQUo, FOKIo, FOACo, 
-	FIFI, FISIo, FISEo, FIEIo, FINIo, FITEo, FIJAo, FIQUo, FIKIo, FIACo, 
-	SISI, SISEo, SIEIo, SINIo, SITEo, SIJAo, SIQUo, SIKIo, SIACo, 
-	SESE, SEEIo, SENIo, SETEo, SEJAo, SEQUo, SEKIo, SEACo, 
-	EIEI, EINIo, EITEo, EIJAo, EIQUo, EIKIo, EIACo, 
-	NINI, NITEo, NIJAo, NIQUo, NIKIo, NIACo, 
-	TETE, TEJAo, TEQUo, TEKIo, TEACo, 
-	JAJA, JAQUo, JAKIo, JAACo, 
-	QUQU, QUKIo, QUACo, 
-	KIKI, KIACo, 
-	ACAC,
-	TWTHs, TWFOs, TWFIs, TWSIs, TWSEs, TWEIs, TWNIs, TWTEs, TWJAs, TWQUs, TWKIs, TWACs, 
-	THFOs, THFIs, THSIs, THSEs, THEIs, THNIs, THTEs, THJAs, THQUs, THKIs, THACs, 
-	FOFIs, FOSIs, FOSEs, FOEIs, FONIs, FOTEs, FOJAs, FOQUs, FOKIs, FOACs, 
-	FISIs, FISEs, FIEIs, FINIs, FITEs, FIJAs, FIQUs, FIKIs, FIACs, 
-	SISEs, SIEIs, SINIs, SITEs, SIJAs, SIQUs, SIKIs, SIACs, 
-	SEEIs, SENIs, SETEs, SEJAs, SEQUs, SEKIs, SEACs, 
-	EINIs, EITEs, EIJAs, EIQUs, EIKIs, EIACs, 
-	NITEs, NIJAs, NIQUs, NIKIs, NIACs, 
-	TEJAs, TEQUs, TEKIs, TEACs, 
-	JAQUs, JAKIs, JAACs, 
-	QUKIs, QUACs, 
-	KIACs,
-	NUM_HAND_COMBOS
 };
 
 /*A different representation of the pools*/
@@ -166,17 +135,12 @@ struct Pool {
 	}
 };
 
-/*Retrieve the id for a given pool*/
-void getPoolID(Pool& pool, Phase currPhase, std::bitset<INFO_KEY_SIZE>& infoKey);
-
-/*Retrieve the id for a given hand*/
-HandID getHandID(Hand& currHand);
-
 /*Print the string representation of the pool*/
 void printPool(const Pool& pool, int numCards);
 
 /*Print the string representation for a hand*/
 void printHand(const Hand& hand);
+
 
 inline int numCardsInPhase(Phase phase)
 {

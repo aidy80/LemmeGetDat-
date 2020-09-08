@@ -190,26 +190,44 @@ int Table::processAction(const ActionClass act)
 	case ActionClass::ALL_IN:
 		raise(currTurn, stacks[currTurn]);
 		break;
-	case ActionClass::RAISE_QUARTER:
-		raise(currTurn, raiseQurtSize());
+	case ActionClass::OPEN1:
+		if (phase == Phase::PREFLOP) {
+			raise(currTurn, open1Size());
+		}
+		else 
+		{
+			raise(currTurn, PRE_OPEN_SIZE);
+		}
 		break;
-	case ActionClass::RAISE_HALF:
-		raise(currTurn, raiseHalfSize());
+	case ActionClass::OPEN2:
+		raise(currTurn, open2Size());
 		break;
-	case ActionClass::RAISE_THREE_QUARTERS:
-		raise(currTurn, raiseThrQurtSize());
+	case ActionClass::OPEN3:
+		raise(currTurn, open3Size());
 		break;
+		/*
 	case ActionClass::RAISE_POT:
 		raise(currTurn, raisePotSize());
 		break;
 	case ActionClass::OPEN:
 		raise(currTurn, OPEN_SIZE);
 		break;
+		*/
 	case ActionClass::BET3:
-		raise(currTurn, BET3_SIZE);
+		if (phase == Phase::PREFLOP) {
+			raise(currTurn, PRE_BET3_SIZE);
+		} else 
+		{
+			raise(currTurn, bet3Size());
+		}
 		break;
 	case ActionClass::BET4:
-		raise(currTurn, BET4_SIZE);
+		if (phase == Phase::PREFLOP) {
+			raise(currTurn, PRE_BET4_SIZE);
+		} else 
+		{
+			raise(currTurn, bet4Size());
+		}
 		break;
 	}
 #ifdef _DEBUG
@@ -335,15 +353,15 @@ ActionClass* Table::getLegalActions()
 	if (phase == Phase::PREFLOP)
 	{
 		acts = new ActionClass[5];
-		if (currHighBet[raiseNum] < OPEN_SIZE)
+		if (currHighBet[raiseNum] < PRE_OPEN_SIZE)
 		{
-			addAction(acts, numElems, ActionClass::OPEN);
+			addAction(acts, numElems, ActionClass::OPEN1);
 		}
-		else if (currHighBet[raiseNum] >= OPEN_SIZE && currHighBet[raiseNum] < BET3_SIZE)
+		else if (currHighBet[raiseNum] >= PRE_OPEN_SIZE && currHighBet[raiseNum] < PRE_BET3_SIZE)
 		{
 			addAction(acts, numElems, ActionClass::BET3);
 		}
-		else if (currHighBet[raiseNum] >= BET3_SIZE && currHighBet[raiseNum] < BET4_SIZE) 
+		else if (currHighBet[raiseNum] >= PRE_BET3_SIZE && currHighBet[raiseNum] < PRE_BET4_SIZE) 
 		{
 			addAction(acts, numElems, ActionClass::BET4);
 		}
@@ -352,6 +370,55 @@ ActionClass* Table::getLegalActions()
 			addAction(acts, numElems, ActionClass::ALL_IN);
 		} 
 	}
+	else if (phase == Phase::FLOP) {
+		acts = new ActionClass[(int)ActionClass::NUM_ACTIONS];
+		int numRTP = numRaisesThisPhase();
+
+		if (stacks[currTurn] > currHighBet[raiseNum] && ((currHighBet[raiseNum] >= ALL_IN_THRES && numRTP > 0) || pots[potNum] > stacks[currTurn])) 
+		{
+			addAction(acts, numElems, ActionClass::ALL_IN);
+		} 
+		if (numRTP == 0 && open1Size() < stacks[currTurn])
+		{
+			addAction(acts, numElems, ActionClass::OPEN1);
+		}
+		if (numRTP == 0 && open2Size() < stacks[currTurn])
+		{
+			addAction(acts, numElems, ActionClass::OPEN2);
+		}
+		/*
+		if (numRTP == 0 && open3Size() < stacks[currTurn])
+		{
+			addAction(acts, numElems, ActionClass::OPEN3);
+		} 
+		*/
+		else if (numRTP == 1 && bet3Size() < stacks[currTurn])
+		{
+			addAction(acts, numElems, ActionClass::BET3);
+		}
+		else if (numRTP == 2 && bet4Size() < stacks[currTurn])
+		{
+			addAction(acts, numElems, ActionClass::BET4);
+		}
+	}
+	else {
+		acts = new ActionClass[(int)ActionClass::NUM_ACTIONS];
+		int numRTP = numRaisesThisPhase();
+
+		if (stacks[currTurn] > currHighBet[raiseNum] && ((currHighBet[raiseNum] >= ALL_IN_THRES && numRTP > 0) || pots[potNum] > stacks[currTurn])) 
+		{
+			addAction(acts, numElems, ActionClass::ALL_IN);
+		} 
+		if (numRTP == 0 && open1Size() < stacks[currTurn])
+		{
+			addAction(acts, numElems, ActionClass::OPEN1);
+		} 
+		else if (numRTP == 1 && bet3Size() < stacks[currTurn]) 
+		{
+			addAction(acts, numElems, ActionClass::BET3);
+		}
+	}
+
 	/*
 	else {
 		acts = new ActionClass[(int)ActionClass::NUM_ACTIONS_POST_FLOP];
@@ -362,7 +429,6 @@ ActionClass* Table::getLegalActions()
 		}
 
 	}
-	*/
 	else if (phase == Phase::FLOP) {
 		acts = new ActionClass[(int)ActionClass::NUM_ACTIONS_POST_FLOP];
 		int numRTP = numRaisesThisPhase();
@@ -401,6 +467,7 @@ ActionClass* Table::getLegalActions()
 			addAction(acts, numElems, ActionClass::RAISE_HALF);
 		}
 	}
+	*/
 
 	if (currHighBet[raiseNum] != BIG_BLIND) 
 	{
@@ -599,6 +666,15 @@ int Table::raiseQurtSize()
 	return 2 * currHighBet[raiseNum] + (pots[potNum] >> 2);
 }
 
+int Table::raiseThirdSize()
+{
+	if (currHighBet[raiseNum] == -1)
+	{
+		return (pots[potNum] / 3);
+	}
+	return 2 * currHighBet[raiseNum] + (pots[potNum] / 3);
+}
+
 int Table::raiseHalfSize()
 {
 	if (currHighBet[raiseNum] == -1) 
@@ -624,4 +700,29 @@ int Table::raisePotSize()
 		return pots[potNum];
 	}
 	return 2 * currHighBet[raiseNum] + pots[potNum];
+}
+
+int Table::open1Size()
+{
+	return raiseThirdSize();
+}
+
+int Table::open2Size()
+{
+	return raiseHalfSize();
+}
+
+int Table::open3Size()
+{
+	return raisePotSize();
+}
+
+int Table::bet3Size()
+{
+	return raiseHalfSize();
+}
+
+int Table::bet4Size()
+{
+	return raiseHalfSize();
 }

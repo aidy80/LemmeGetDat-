@@ -3,16 +3,15 @@
 #include "PokerSim.h"
 #include "UnitTests/TestBestHand.h"
 #include "UnitTests/TestDeck.h"
-#include "UnitTests/TestPokerCards.h"
+#include "UnitTests/TestInfoSet.h"
 
 constexpr int NUM_PLAYERS = 6;
 
 void runUnitTests()
 {
 	//testDeck();
-	//runBHUnitTests();
-	testHandID();
-	testPoolID();
+	//testBestHand();
+	testInfoSet();
 }
 
 void countNumActSeq()
